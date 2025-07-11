@@ -169,7 +169,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     font-size: 0.85rem;
-    border: 1px solid #e9ecef;
+    border: none;
     transition: all 0.3s ease;
     /* position and width are now context-dependent */
     box-sizing: border-box;

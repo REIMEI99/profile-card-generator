@@ -1,126 +1,5 @@
 // script.js
 
-// === 新增：LocalStorage 状态管理 ===
-let saveTimer;
-
-/**
- * 防抖函数，延迟执行保存操作以提高性能
- */
-function debounceSaveState() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(saveState, 500); // 500ms延迟
-}
-
-/**
- * 将当前页面的所有状态收集并保存到localStorage
- */
-function saveState() {
-    const cardsData = [];
-    document.querySelectorAll('.card-control').forEach(control => {
-        const cardId = control.dataset.cardId;
-        const cardPreview = document.querySelector(`.card[data-card-id="${cardId}"]`);
-        if (!cardPreview) return;
-
-        const type = singleColumnCardsContainer.contains(cardPreview) ? 'single' : 'dual';
-        
-        cardsData.push({
-            id: cardId,
-            type: type,
-            title: control.querySelector('.card-title-input').value,
-            content: control.querySelector('.card-content-input').value,
-            color: control.querySelector('.card-color-picker').value,
-            opacity: control.querySelector('.card-opacity-slider').value,
-        });
-    });
-
-    const state = {
-        personalInfo: {
-            nickname: nicknameInput.value,
-            bio: bioInput.value,
-            avatar: avatarPreview.src,
-            backgroundImage: previewArea.style.backgroundImage,
-            backgroundOption: document.querySelector('input[name="bg-option"]:checked').value,
-            overlayColor: bgOverlayColorInput.value,
-            overlayOpacity: bgOverlayOpacityInput.value,
-            headerColor: bgColorPicker.value,
-            headerOpacity: bgOpacitySlider.value,
-            pageBgColor: pageBgColorPicker.value,
-        },
-        cards: cardsData,
-        globalCardStyles: {
-            color: globalCardColorInput.value,
-            opacity: globalCardOpacityInput.value,
-        },
-        cardIdCounter: cardIdCounter,
-    };
-
-    localStorage.setItem('selfIntroGeneratorState', JSON.stringify(state));
-    console.log('状态已保存到 localStorage。');
-}
-
-/**
- * 从localStorage加载并恢复页面状态
- */
-function loadState() {
-    const savedStateJSON = localStorage.getItem('selfIntroGeneratorState');
-    if (!savedStateJSON) {
-        console.log('未找到已保存的状态。');
-        return;
-    }
-
-    const state = JSON.parse(savedStateJSON);
-    
-    // 恢复个人信息
-    nicknameInput.value = state.personalInfo.nickname;
-    nicknamePreview.textContent = state.personalInfo.nickname || '你的昵称';
-    bioInput.value = state.personalInfo.bio;
-    bioPreview.textContent = state.personalInfo.bio || '一句话介绍自己';
-    
-    // 只有当头像是 data URL 时才加载，避免加载占位图
-    if (state.personalInfo.avatar && state.personalInfo.avatar.startsWith('data:image')) {
-        avatarPreview.src = state.personalInfo.avatar;
-    }
-
-    if (state.personalInfo.backgroundImage && state.personalInfo.backgroundImage !== 'none') {
-        previewArea.style.backgroundImage = state.personalInfo.backgroundImage;
-        previewArea.classList.add('has-bg-image');
-        updateProfileTextColor('#FFFFFF');
-    } else {
-        previewArea.style.backgroundColor = state.personalInfo.pageBgColor;
-    }
-    pageBgColorPicker.value = state.personalInfo.pageBgColor || '#ffffff';
-
-    document.querySelector(`input[name="bg-option"][value="${state.personalInfo.backgroundOption}"]`).checked = true;
-    bgOverlayColorInput.value = state.personalInfo.overlayColor;
-    bgOverlayOpacityInput.value = state.personalInfo.overlayOpacity;
-    bgColorPicker.value = state.personalInfo.headerColor;
-    bgOpacitySlider.value = state.personalInfo.headerOpacity;
-    
-    // 恢复全局卡片样式
-    globalCardColorInput.value = state.globalCardStyles.color;
-    globalCardColor = state.globalCardStyles.color;
-    globalCardOpacityInput.value = state.globalCardStyles.opacity;
-    globalCardOpacity = state.globalCardStyles.opacity;
-
-    // 恢复卡片ID计数器
-    cardIdCounter = state.cardIdCounter || 0;
-
-    // 清空现有卡片（以防万一）
-    cardControlsContainer.innerHTML = '';
-    singleColumnCardsContainer.innerHTML = '';
-    dualColumnCardsContainer.innerHTML = '';
-
-    // 重新创建卡片
-    if (state.cards && state.cards.length > 0) {
-        state.cards.forEach(cardData => {
-            addCard(cardData.type, cardData);
-        });
-    }
-
-    console.log('状态已从 localStorage 加载。');
-}
-
-
 // === 1. 获取所有需要的DOM元素 ===
 // 控制面板元素
 const nicknameInput = document.getElementById('nickname-input');
@@ -131,12 +10,14 @@ const bgOverlayColorInput = document.getElementById('bg-overlay-color');
 const bgOverlayOpacityInput = document.getElementById('bg-overlay-opacity');
 const bgColorPicker = document.getElementById('bg-color-picker');
 const bgOpacitySlider = document.getElementById('bg-opacity-slider');
-const pageBgColorPicker = document.getElementById('page-bg-color-picker'); // 新增
+const headerTextColorPicker = document.getElementById('header-text-color-picker'); // 新增
+const pageBgColorPicker = document.getElementById('page-bg-color-picker');
 const addSingleCardBtn = document.getElementById('add-single-card-btn');
 const addDualCardBtn = document.getElementById('add-dual-card-btn');
 const cardControlsContainer = document.getElementById('card-controls-container');
 const exportBtn = document.getElementById('export-btn');
 const globalCardColorInput = document.getElementById('global-card-color');
+const globalCardTextColorInput = document.getElementById('global-card-text-color'); // 新增
 const globalCardOpacityInput = document.getElementById('global-card-opacity');
 
 // 预览区域元素
@@ -156,6 +37,7 @@ const cancelCropBtn = document.getElementById('cancel-crop-btn');
 let cropper = null; // 用于存储cropper实例
 let currentUploadType = null; // 'avatar' 或 'background'
 let globalCardColor = '#ffffff'; // 全局卡片颜色
+let globalCardTextColor = '#000000'; // 新增：全局卡片文字颜色
 let globalCardOpacity = 0.9; // 全局卡片不透明度
 
 
@@ -262,16 +144,7 @@ function updateBackgroundOverlay() {
  * @param {string} hexColor - #开头的十六进制颜色
  * @returns {string} - '#000000' 或 '#FFFFFF'
  */
-function getContrastingTextColor(hexColor) {
-    if (!hexColor) return '#000000';
-    const hex = hexColor.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    // 使用WCAG亮度计算公式
-    const luma = (r * 299 + g * 587 + b * 114) / 1000;
-    return luma >= 128 ? '#000000' : '#FFFFFF';
-}
+// 函数 getContrastingTextColor 已被移除
 
 /**
  * 更新个人信息区域外观
@@ -280,16 +153,14 @@ function updateProfileHeaderAppearance() {
     const color = bgColorPicker.value;
     const opacity = bgOpacitySlider.value;
     profileHeader.style.backgroundColor = hexToRgba(color, opacity);
-    
-    const textColor = getContrastingTextColor(color);
-    updateProfileTextColor(textColor);
+    updateProfileTextColor(); // 直接调用，不再传递颜色
 }
 
 /**
  * 更新个人信息区域的文字颜色
- * @param {string} color - 传入的颜色，'black' 或 'white'
  */
-function updateProfileTextColor(color) {
+function updateProfileTextColor() {
+    const color = headerTextColorPicker.value; // 从新的选择器读取颜色
     nicknamePreview.style.color = color;
     bioPreview.style.color = color;
     // 使用背景图时，不再需要文字阴影，因为有蒙版
@@ -329,11 +200,9 @@ function setupCropper(imageSrc, options = {}) {
 // 实时更新昵称和简介
 nicknameInput.addEventListener('input', () => {
     nicknamePreview.textContent = nicknameInput.value || '你的昵称';
-    debounceSaveState();
 });
 bioInput.addEventListener('input', () => {
     bioPreview.textContent = bioInput.value || '一句话介绍自己';
-    debounceSaveState();
 });
 
 // 处理文件上传
@@ -351,10 +220,9 @@ function handleImageUpload(event, uploadType) {
             // 背景图直接应用，不裁剪
             previewArea.style.backgroundImage = `url(${e.target.result})`;
             previewArea.classList.add('has-bg-image');
-            updateProfileTextColor('#FFFFFF'); // 背景图默认使用白色文字
+            updateProfileTextColor(); // 不再强制白色文字，而是使用选择器的值
             updateBackgroundStyle(); // 应用当前的显示方式
             updateBackgroundOverlay(); // 应用当前的蒙版样式
-            saveState(); // 直接保存，因为图片是重要数据
         }
     };
     reader.readAsDataURL(file);
@@ -368,40 +236,25 @@ bgUpload.addEventListener('change', (e) => handleImageUpload(e, 'background'));
 
 
 // 顶部背景颜色选择
-bgColorPicker.addEventListener('input', () => {
-    updateProfileHeaderAppearance();
-    debounceSaveState();
-});
-bgOpacitySlider.addEventListener('input', () => {
-    updateProfileHeaderAppearance();
-    debounceSaveState();
-});
+bgColorPicker.addEventListener('input', updateProfileHeaderAppearance);
+bgOpacitySlider.addEventListener('input', updateProfileHeaderAppearance);
+headerTextColorPicker.addEventListener('input', updateProfileTextColor); // 新增：监听文字颜色选择器
 
 // 新增：页面背景颜色选择
 pageBgColorPicker.addEventListener('input', () => {
     previewArea.style.backgroundColor = pageBgColorPicker.value;
     previewArea.style.backgroundImage = 'none'; // 清除背景图
     previewArea.classList.remove('has-bg-image');
-    debounceSaveState();
 });
 
 // 新增：监听背景图显示方式变化
 document.querySelectorAll('input[name="bg-option"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-        updateBackgroundStyle();
-        saveState(); // 直接保存
-    });
+    radio.addEventListener('change', updateBackgroundStyle);
 });
 
 // 新增：监听蒙版控件变化
-bgOverlayColorInput.addEventListener('input', () => {
-    updateBackgroundOverlay();
-    debounceSaveState();
-});
-bgOverlayOpacityInput.addEventListener('input', () => {
-    updateBackgroundOverlay();
-    debounceSaveState();
-});
+bgOverlayColorInput.addEventListener('input', updateBackgroundOverlay);
+bgOverlayOpacityInput.addEventListener('input', updateBackgroundOverlay);
 
 // 新增：全局卡片样式控制器
 globalCardColorInput.addEventListener('input', (e) => {
@@ -410,7 +263,14 @@ globalCardColorInput.addEventListener('input', (e) => {
         picker.value = globalCardColor;
         picker.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    debounceSaveState();
+});
+// 新增：全局卡片文字颜色控制器
+globalCardTextColorInput.addEventListener('input', (e) => {
+    globalCardTextColor = e.target.value;
+    document.querySelectorAll('.card-control .card-text-color-picker').forEach(picker => {
+        picker.value = globalCardTextColor;
+        picker.dispatchEvent(new Event('input', { bubbles: true }));
+    });
 });
 globalCardOpacityInput.addEventListener('input', (e) => {
     globalCardOpacity = e.target.value;
@@ -418,7 +278,6 @@ globalCardOpacityInput.addEventListener('input', (e) => {
         slider.value = globalCardOpacity;
         slider.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    debounceSaveState();
 });
 
 
@@ -438,7 +297,6 @@ confirmCropBtn.addEventListener('click', () => {
     avatarPreview.src = croppedImageDataURL;
     
     setupCropper(null); // 关闭并销毁cropper
-    saveState(); // 头像变化后立即保存
 });
 
 cancelCropBtn.addEventListener('click', () => {
@@ -453,11 +311,10 @@ let cardIdCounter = 0;
 /**
  * 通用的添加卡片函数
  * @param {string} type - 'single' 或 'dual'
- * @param {object|null} cardData - 用于从localStorage恢复卡片的数据
  */
-function addCard(type, cardData = null) {
-    const isNewCard = cardData === null;
-    const cardId = isNewCard ? ++cardIdCounter : cardData.id;
+function addCard(type) {
+    cardIdCounter++;
+    const cardId = cardIdCounter;
 
     // --- A. 在控制面板创建新的卡片编辑器 ---
     const controlDiv = document.createElement('div');
@@ -471,9 +328,11 @@ function addCard(type, cardData = null) {
         <label>内容:</label>
         <textarea class="card-content-input" placeholder="卡片内容..."></textarea>
         <label>背景色:</label>
-        <input type="color" class="card-color-picker" value="${isNewCard ? globalCardColor : cardData.color}">
+        <input type="color" class="card-color-picker" value="${globalCardColor}">
+        <label>文字颜色:</label>
+        <input type="color" class="card-text-color-picker" value="${globalCardTextColor}">
         <label>不透明度:</label>
-        <input type="range" class="card-opacity-slider" min="0.1" max="1" step="0.05" value="${isNewCard ? globalCardOpacity : cardData.opacity}">
+        <input type="range" class="card-opacity-slider" min="0.1" max="1" step="0.05" value="${globalCardOpacity}">
     `;
     cardControlsContainer.appendChild(controlDiv);
 
@@ -482,8 +341,8 @@ function addCard(type, cardData = null) {
     cardDiv.className = 'card';
     cardDiv.dataset.cardId = cardId;
     cardDiv.innerHTML = `
-        <h3 class="card-title">${isNewCard ? '卡片标题' : cardData.title}</h3>
-        <p class="card-content">${isNewCard ? '卡片内容...' : cardData.content}</p>
+        <h3 class="card-title">卡片标题</h3>
+        <p class="card-content">卡片内容...</p>
     `;
 
     // 根据类型将卡片添加到对应的容器
@@ -494,56 +353,40 @@ function addCard(type, cardData = null) {
     const titleInput = controlDiv.querySelector('.card-title-input');
     const contentInput = controlDiv.querySelector('.card-content-input');
     const colorPicker = controlDiv.querySelector('.card-color-picker');
+    const textColorPicker = controlDiv.querySelector('.card-text-color-picker'); // 新增
     const opacitySlider = controlDiv.querySelector('.card-opacity-slider');
     const deleteBtn = controlDiv.querySelector('.delete-card-btn');
     
     const previewTitle = cardDiv.querySelector('.card-title');
     const previewContent = cardDiv.querySelector('.card-content');
 
-    // 填充来自localStorage的数据（如果存在）
-    if (!isNewCard) {
-        titleInput.value = cardData.title;
-        contentInput.value = cardData.content;
-    }
-
     // 统一更新卡片背景和文字颜色的函数
     function updateCardAppearance() {
         const hexColor = colorPicker.value;
         const opacity = opacitySlider.value;
+        const textColor = textColorPicker.value; // 新增：获取文字颜色
         
         cardDiv.style.backgroundColor = hexToRgba(hexColor, opacity);
 
-        const textColor = getContrastingTextColor(hexColor);
+        // 不再自动计算文字颜色，直接使用选择器的值
         previewTitle.style.color = textColor;
         previewContent.style.color = textColor;
 
-        // 如果是深色背景，移除边框或设为透明，否则使用默认边框
-        if (textColor === '#FFFFFF') { // 深色背景
-            cardDiv.style.border = '1px solid transparent'; // 关键修改：移除或设为透明边框
-        } else { // 浅色背景
-            cardDiv.style.border = '1px solid #e9ecef'; // 恢复默认边框
-        }
+        // 移除所有关于边框的判断和修改
     }
 
     // 绑定事件
     titleInput.addEventListener('input', () => {
         previewTitle.textContent = titleInput.value || '卡片标题';
         if (type === 'dual') recalculateCardLayout();
-        debounceSaveState();
     });
     contentInput.addEventListener('input', () => {
         previewContent.textContent = contentInput.value || '卡片内容...';
         if (type === 'dual') recalculateCardLayout();
-        debounceSaveState();
     });
-    colorPicker.addEventListener('input', () => {
-        updateCardAppearance();
-        debounceSaveState();
-    });
-    opacitySlider.addEventListener('input', () => {
-        updateCardAppearance();
-        debounceSaveState();
-    });
+    colorPicker.addEventListener('input', updateCardAppearance);
+    textColorPicker.addEventListener('input', updateCardAppearance); // 新增
+    opacitySlider.addEventListener('input', updateCardAppearance);
 
     deleteBtn.addEventListener('click', () => {
         controlDiv.style.transition = 'opacity 0.3s ease';
@@ -562,7 +405,6 @@ function addCard(type, cardData = null) {
                 recalculateCardLayout();
             }
             updateContainerMargins();
-            saveState(); // 删除后立即保存
         }, 300);
     });
 
@@ -571,10 +413,6 @@ function addCard(type, cardData = null) {
     }
     updateContainerMargins();
     updateCardAppearance(); // 初始化卡片外观
-
-    if (isNewCard) {
-        saveState(); // 添加新卡片后立即保存
-    }
 }
 
 addSingleCardBtn.addEventListener('click', () => addCard('single'));
@@ -634,7 +472,6 @@ window.addEventListener('resize', () => {
 
 // 首次加载时计算一次布局
 window.addEventListener('load', () => {
-    loadState(); // <<<<<<< 新增：页面加载时尝试恢复状态
     recalculateCardLayout();
     updateContainerMargins();
     // 初始化顶部区域外观
