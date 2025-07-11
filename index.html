@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <title>手机版自我介绍生成器</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.proxy.ustclug.org">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.proxy.ustclug.org/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet">
+    <!-- 引入Cropper.js的CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+</head>
+<body>
+    <div class="app-container">
+        <!-- ===== 控制面板 ===== -->
+        <div class="controls">
+            <h2>编辑面板</h2>
+            
+            <!-- 个人信息区控制 -->
+            <fieldset>
+                <legend>个人信息</legend>
+                <label>昵称:</label>
+                <input type="text" id="nickname-input" placeholder="输入你的昵称">
+                
+                <label>简介:</label>
+                <input type="text" id="bio-input" placeholder="一句话介绍自己">
+
+                <label>头像上传:</label>
+                <input type="file" id="avatar-upload" accept="image/*">
+
+                <label>页面背景图上传:</label>
+                <input type="file" id="bg-upload" accept="image/*">
+                
+                <div class="background-options">
+                    <label class="group-label">显示方式:</label>
+                    <input type="radio" id="bg-opt-cover" name="bg-option" value="cover" checked> <label for="bg-opt-cover">缩放</label>
+                    <input type="radio" id="bg-opt-stretch" name="bg-option" value="stretch"> <label for="bg-opt-stretch">拉伸</label>
+                    <input type="radio" id="bg-opt-tile" name="bg-option" value="tile"> <label for="bg-opt-tile">平铺</label>
+                </div>
+
+                <div class="background-options">
+                    <label class="group-label">颜色蒙版:</label>
+                    <input type="color" id="bg-overlay-color" value="#ffffff">
+                    <label>不透明度:</label>
+                    <input type="range" id="bg-overlay-opacity" min="0" max="1" step="0.05" value="0.5">
+                </div>
+
+                <label>顶部区域背景色:</label>
+                <input type="color" id="bg-color-picker" value="#f0f2f5">
+                <label>顶部区域不透明度:</label>
+                <input type="range" id="bg-opacity-slider" min="0" max="1" step="0.05" value="1">
+
+                <label>页面背景色 (无图时):</label>
+                <input type="color" id="page-bg-color-picker" value="#ffffff">
+            </fieldset>
+
+            <!-- 卡片控制区 -->
+            <fieldset>
+                <legend>信息卡片</legend>
+                <div class="global-card-controls">
+                    <legend class="group-legend">统一修改所有卡片</legend>
+                    <label>背景色:</label>
+                    <input type="color" id="global-card-color" value="#ffffff">
+                    <label>不透明度:</label>
+                    <input type="range" id="global-card-opacity" min="0.1" max="1" step="0.05" value="0.9">
+                </div>
+                <div id="card-controls-container">
+                    <!-- JS会在这里动态添加卡片的控制器 -->
+                </div>
+                <button id="add-single-card-btn">➕ 添加单列卡片</button>
+                <button id="add-dual-card-btn">➕ 添加双列卡片</button>
+            </fieldset>
+
+            <!-- (进阶) 导出功能 -->
+            <button id="export-btn">导出为图片</button>
+        </div>
+
+        <!-- ===== 预览区域 ===== -->
+        <div class="preview" id="preview-area">
+            <!-- 个人信息展示区 -->
+            <header class="profile-header" id="profile-header">
+                <img src="https://via.placeholder.com/100" alt="avatar" class="avatar" id="avatar-preview">
+                <h1 id="nickname-preview">你的昵称</h1>
+                <p id="bio-preview">一句话介绍自己</p>
+            </header>
+
+            <!-- 卡片展示区 -->
+            <main class="cards-container" id="single-column-cards-container">
+                <!-- JS会在这里动态添加单列卡片 -->
+            </main>
+            <main class="cards-container" id="dual-column-cards-container">
+                <!-- JS会在这里动态添加双列瀑布流卡片 -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ===== 新增：图片裁剪模态框 ===== -->
+    <div class="cropper-modal-overlay" id="cropper-modal">
+        <div class="cropper-container">
+            <div class="img-container">
+                <img id="image-to-crop" src="" alt="待裁剪图片">
+            </div>
+            <div class="cropper-actions">
+                <button id="cancel-crop-btn" class="cancel-btn">取消</button>
+                <button id="confirm-crop-btn">确认裁剪</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入JS文件 -->
+    <script src="script.js"></script>
+    <!-- 引入html2canvas和Cropper.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+</body>
+</html>
