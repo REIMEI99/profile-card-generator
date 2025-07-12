@@ -21,7 +21,7 @@ body {
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
-    background: #fff;
+    background: #fcfcfc;
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -30,13 +30,13 @@ body {
 
 /* === 编辑面板现代化改造 === */
 .controls fieldset {
-    border: none;
+    border: 1px solid rgba(0, 0, 0, 0.05); /* 新增: 添加一个非常细微的边框来强化轮廓 */
     padding: 0;
     margin: 30px 0 0 0;
     background-color: #ffffff;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07); /* 修改: 增强阴影效果 */
 }
 
 .controls fieldset:first-of-type {
