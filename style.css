@@ -297,8 +297,8 @@ body {
     }
     
     .cards-container {
-        /* gap: 8px; */ /* 移除，避免与JS中的10px冲突 */
-        padding: 12px;
+        /* gap: 8px; /* 移除，避免与JS中的10px冲突 */
+        /* padding: 12px; */ /* 移除，这是导致双列和单列边距不一致的根源 */
     }
     
     .card {
