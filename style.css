@@ -262,6 +262,20 @@ body {
     box-sizing: border-box;
 }
 
+/* 新增：为可编辑元素提供视觉反馈和占位符样式 */
+[contenteditable="true"]:focus {
+    outline: 2px solid rgba(0, 122, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+    border-radius: 4px;
+}
+
+[contenteditable="true"]:empty::before {
+    content: attr(data-placeholder);
+    color: #999;
+    pointer-events: none; /* 确保伪元素不影响点击 */
+}
+
+
 .card.align-center {
     text-align: center;
 }

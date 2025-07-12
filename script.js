@@ -358,6 +358,20 @@ function updateProfileTextColor() {
 }
 
 /**
+ * 新增：阻止在指定元素上按回车键换行
+ * @param {KeyboardEvent} e - 键盘事件
+ * @param {HTMLElement|null} nextElementToFocus - （可选）回车后要聚焦的下一个元素
+ */
+function preventEnter(e, nextElementToFocus = null) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (nextElementToFocus) {
+            nextElementToFocus.focus();
+        }
+    }
+}
+
+/**
  * 初始化或销毁Cropper.js
  * @param {string|null} imageSrc - 图片的Data URL。传null则销毁。
  * @param {object} options - Cropper.js的配置项
@@ -386,13 +400,23 @@ function setupCropper(imageSrc, options = {}) {
 
 // === 3. 绑定个人信息区的事件监听 ===
 
-// 实时更新昵称和简介
+// 实时更新昵称和简介（双向绑定）
 nicknameInput.addEventListener('input', () => {
-    nicknamePreview.textContent = nicknameInput.value || '你的昵称';
+    nicknamePreview.textContent = nicknameInput.value;
     debounceSaveState();
 });
+nicknamePreview.addEventListener('input', () => {
+    nicknameInput.value = nicknamePreview.textContent;
+    debounceSaveState();
+});
+nicknamePreview.addEventListener('keydown', (e) => preventEnter(e, bioPreview));
+
 bioInput.addEventListener('input', () => {
-    bioPreview.textContent = bioInput.value || '一句话介绍自己';
+    bioPreview.textContent = bioInput.value;
+    debounceSaveState();
+});
+bioPreview.addEventListener('input', () => {
+    bioInput.value = bioPreview.textContent;
     debounceSaveState();
 });
 
@@ -615,8 +639,8 @@ function addCard(type, cardData = null) {
     cardDiv.className = 'card';
     cardDiv.dataset.cardId = cardId;
     cardDiv.innerHTML = `
-        <h3 class="card-title">${isNewCard ? '卡片标题' : (cardData.title || '卡片标题')}</h3>
-        <p class="card-content">${isNewCard ? '卡片内容...' : (cardData.content || '卡片内容...')}</p>
+        <h3 class="card-title" contenteditable="true" data-placeholder="卡片标题"></h3>
+        <p class="card-content" contenteditable="true" data-placeholder="卡片内容..."></p>
     `;
 
     // 根据类型将卡片添加到对应的容器
@@ -646,6 +670,8 @@ function addCard(type, cardData = null) {
     if (!isNewCard) {
         titleInput.value = cardData.title;
         contentInput.value = cardData.content;
+        previewTitle.textContent = cardData.title;
+        previewContent.textContent = cardData.content;
         // 新增：恢复卡片背景
         if (cardData.backgroundImage && cardData.backgroundImage !== 'none' && cardData.backgroundImage !== '') {
             cardDiv.style.backgroundImage = cardData.backgroundImage;
@@ -708,15 +734,32 @@ function addCard(type, cardData = null) {
 
     // 绑定事件
     titleInput.addEventListener('input', () => {
-        previewTitle.textContent = titleInput.value || '卡片标题';
+        previewTitle.textContent = titleInput.value;
         if (type === 'dual') recalculateCardLayout();
         debounceSaveState();
     });
     contentInput.addEventListener('input', () => {
-        previewContent.textContent = contentInput.value || '卡片内容...';
+        previewContent.textContent = contentInput.value;
         if (type === 'dual') recalculateCardLayout();
         debounceSaveState();
     });
+
+    // 预览区 -> 控制区
+    previewTitle.addEventListener('input', () => {
+        titleInput.value = previewTitle.textContent;
+        if (type === 'dual') recalculateCardLayout();
+        debounceSaveState();
+    });
+    previewContent.addEventListener('input', () => {
+        contentInput.value = previewContent.textContent;
+        if (type === 'dual') recalculateCardLayout();
+        debounceSaveState();
+    });
+
+    // 阻止标题换行
+    previewTitle.addEventListener('keydown', (e) => preventEnter(e, previewContent));
+
+
     colorPicker.addEventListener('input', () => {
         updateCardAppearance();
         debounceSaveState();
