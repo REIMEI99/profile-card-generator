@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.proxy.ustclug.org">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.proxy.ustclug.org/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.proxy.ustclug.org/css2?family=Noto+Serif+SC&display=swap" rel="stylesheet">
     <!-- 引入Cropper.js的CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 </head>
@@ -97,6 +98,13 @@
                             <input type="radio" id="global-line-height-compact" name="global-line-height" value="1.4"> <label for="global-line-height-compact">紧凑</label>
                             <input type="radio" id="global-line-height-medium" name="global-line-height" value="1.5" checked> <label for="global-line-height-medium">中等</label>
                             <input type="radio" id="global-line-height-loose" name="global-line-height" value="1.6"> <label for="global-line-height-loose">宽松</label>
+                        </div>
+                        <div class="misc-controls">
+                            <label for="global-font-family-select">全局字体:</label>
+                            <select id="global-font-family-select">
+                                <option value="sans" selected>思源黑体</option>
+                                <option value="serif">思源宋体</option>
+                            </select>
                         </div>
                     </div>
 

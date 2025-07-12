@@ -58,6 +58,7 @@ function saveState() {
             shadow: document.getElementById('global-card-shadow-toggle').checked,
             textAlign: document.querySelector('input[name="global-card-align"]:checked')?.value || 'left',
             lineHeight: document.querySelector('input[name="global-line-height"]:checked')?.value || '1.5',
+            fontFamily: globalFontFamilySelect.value || 'sans',
         },
         cardIdCounter: cardIdCounter,
     };
@@ -103,6 +104,8 @@ function loadState() {
     document.querySelector(`input[name="global-card-align"][value="${globalAlign}"]`).checked = true;
     const globalLineHeight = state.globalCardStyles.lineHeight || '1.5';
     document.querySelector(`input[name="global-line-height"][value="${globalLineHeight}"]`).checked = true;
+    const globalFontFamily = state.globalCardStyles.fontFamily || 'sans';
+    globalFontFamilySelect.value = globalFontFamily;
 
 
     // 恢复卡片ID计数器
@@ -129,6 +132,7 @@ function loadState() {
     updateBackgroundStyle();
     updateAllCardsAlignment(); // 新增：应用加载的对齐设置
     updateAllCardsLineHeight(); // 新增：应用加载的行距设置
+    updateFontFamily(); // 新增：应用加载的字体设置
     // 触发阴影更新
     globalCardShadowToggle.dispatchEvent(new Event('change'));
 
@@ -159,6 +163,7 @@ const globalCardOpacityInput = document.getElementById('global-card-opacity');
 const globalCardShadowToggle = document.getElementById('global-card-shadow-toggle');
 const globalCardAlignRadios = document.querySelectorAll('input[name="global-card-align"]'); // 新增
 const globalCardLineHeightRadios = document.querySelectorAll('input[name="global-line-height"]'); // 新增
+const globalFontFamilySelect = document.getElementById('global-font-family-select'); // 修改：从单选改为下拉框
 
 // 预览区域元素
 const previewArea = document.getElementById('preview-area');
@@ -216,6 +221,24 @@ function updateCardAlignment(cardId) {
         cardDiv.classList.add('align-left');
     } else if (finalAlign === 'center') {
         cardDiv.classList.add('align-center');
+    }
+}
+
+/**
+ * 新增：更新预览区域的字体
+ */
+function updateFontFamily() {
+    const fontFamily = globalFontFamilySelect.value || 'sans';
+    if (fontFamily === 'serif') {
+        previewArea.classList.remove('font-sans');
+        previewArea.classList.add('font-serif');
+    } else {
+        previewArea.classList.remove('font-serif');
+        previewArea.classList.add('font-sans');
+    }
+    // 字体改变会严重影响布局，必须重算
+    if (dualColumnCardsContainer.children.length > 0) {
+        recalculateCardLayout();
     }
 }
 
@@ -540,6 +563,12 @@ globalCardLineHeightRadios.forEach(radio => {
         updateAllCardsLineHeight();
         debounceSaveState();
     });
+});
+
+// 修改：全局字体控制器
+globalFontFamilySelect.addEventListener('change', () => {
+    updateFontFamily();
+    debounceSaveState();
 });
 
 
@@ -1005,6 +1034,9 @@ exportBtn.addEventListener('click', async () => {
         previewArea.style.width = '600px';
         previewArea.style.maxWidth = '600px';
         recalculateCardLayout(); // 根据新宽度重新计算瀑布流布局
+        
+        // --- 核心修复：等待所有字体加载完成后再截图 ---
+        await document.fonts.ready;
         
         // 等待DOM更新
         await new Promise(resolve => setTimeout(resolve, 100));

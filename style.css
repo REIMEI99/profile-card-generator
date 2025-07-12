@@ -180,6 +180,15 @@ body {
     background-position: center;
 }
 
+/* 新增：字体切换的样式类 */
+.preview.font-sans {
+    font-family: 'Noto Sans SC', sans-serif;
+}
+
+.preview.font-serif {
+    font-family: 'Noto Serif SC', serif;
+}
+
 .preview.has-bg-image::before {
     content: '';
     position: absolute;
@@ -442,6 +451,23 @@ body {
 .card-alignment-control input[type="radio"] + label {
     font-weight: normal;
     cursor: pointer;
+}
+
+/* 新增：为字体选择下拉框添加样式 */
+#global-font-family-select {
+    width: 150px; /* 给下拉框一个合适的宽度 */
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+    -webkit-appearance: none; /* 移除原生外观 */
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%208l5%205%205-5z%22%20fill%3D%22%23555%22/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: right 5px center;
+    background-size: 1.2em;
 }
 
 /* 新增：卡片背景图显示方式选项样式 */
