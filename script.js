@@ -12,9 +12,10 @@ function debounceSaveState() {
 }
 
 /**
- * 将当前页面的所有状态收集并保存到localStorage (不含图片)
+ * 将当前页面的所有状态收集并返回为一个对象 (不含图片)
+ * @returns {object} state - 包含所有配置的状态对象
  */
-function saveState() {
+function getCurrentState() {
     const cardsData = [];
     document.querySelectorAll('.card-control').forEach(control => {
         const cardId = control.dataset.cardId;
@@ -31,7 +32,7 @@ function saveState() {
             color: control.querySelector('.card-color-picker').value,
             textColor: control.querySelector('.card-text-color-picker').value,
             opacity: control.querySelector('.card-opacity-slider').value,
-            backgroundImage: cardPreview.style.backgroundImage, // 新增：保存卡片背景图
+            // backgroundImage: cardPreview.style.backgroundImage, // 移除：不再导出卡片背景图信息
             bgOption: control.querySelector(`input[name="card-bg-option-${cardId}"]:checked`)?.value || 'cover',
             textAlign: control.querySelector(`input[name="card-align-option-${cardId}"]:checked`)?.value || 'default',
         });
@@ -63,6 +64,14 @@ function saveState() {
         cardIdCounter: cardIdCounter,
     };
 
+    return state;
+}
+
+/**
+ * 将当前页面的所有状态收集并保存到localStorage (不含图片)
+ */
+function saveState() {
+    const state = getCurrentState();
     localStorage.setItem('selfIntroGeneratorState', JSON.stringify(state));
     console.log('文本状态已保存到 localStorage。');
 }
@@ -76,67 +85,88 @@ function loadState() {
         console.log('未找到已保存的状态。');
         return;
     }
-
     const state = JSON.parse(savedStateJSON);
-    
-    // 恢复个人信息 (文本和颜色)
-    nicknameInput.value = state.personalInfo.nickname;
-    bioInput.value = state.personalInfo.bio;
-    pageBgColorPicker.value = state.personalInfo.pageBgColor || '#ffffff';
-    previewArea.style.backgroundColor = state.personalInfo.pageBgColor;
+    applyState(state);
+    console.log('状态已从 localStorage 加载。');
+}
 
-    document.querySelector(`input[name="bg-option"][value="${state.personalInfo.backgroundOption}"]`).checked = true;
-    bgOverlayColorInput.value = state.personalInfo.overlayColor;
-    bgOverlayOpacityInput.value = state.personalInfo.overlayOpacity;
-    bgColorPicker.value = state.personalInfo.headerColor;
-    bgOpacitySlider.value = state.personalInfo.headerOpacity;
-    headerTextColorPicker.value = state.personalInfo.headerTextColor;
-    
-    // 恢复全局卡片样式
-    globalCardColorInput.value = state.globalCardStyles.color;
-    globalCardColor = state.globalCardStyles.color;
-    globalCardTextColorInput.value = state.globalCardStyles.textColor;
-    globalCardTextColor = state.globalCardStyles.textColor;
-    globalCardOpacityInput.value = state.globalCardStyles.opacity;
-    globalCardOpacity = state.globalCardStyles.opacity;
-    document.getElementById('global-card-shadow-toggle').checked = state.globalCardStyles.shadow;
-    const globalAlign = state.globalCardStyles.textAlign || 'left';
-    document.querySelector(`input[name="global-card-align"][value="${globalAlign}"]`).checked = true;
-    const globalLineHeight = state.globalCardStyles.lineHeight || '1.5';
-    document.querySelector(`input[name="global-line-height"][value="${globalLineHeight}"]`).checked = true;
-    const globalFontFamily = state.globalCardStyles.fontFamily || 'sans';
-    globalFontFamilySelect.value = globalFontFamily;
-
-
-    // 恢复卡片ID计数器
-    cardIdCounter = state.cardIdCounter || 0;
-
-    // 清空现有卡片
-    document.getElementById('single-card-controls-container').innerHTML = '';
-    document.getElementById('dual-card-controls-container').innerHTML = '';
-    singleColumnCardsContainer.innerHTML = '';
-    dualColumnCardsContainer.innerHTML = '';
-
-    // 重新创建卡片
-    if (state.cards && state.cards.length > 0) {
-        state.cards.forEach(cardData => {
-            addCard(cardData.type, cardData);
-        });
+/**
+ * 新增：根据传入的状态对象，恢复页面
+ * @param {object} state - 状态对象
+ */
+function applyState(state) {
+    if (!state) {
+        alert('配置数据无效！');
+        return;
     }
 
-    // --- 新增：强制更新预览区域，确保加载的数据能立即显示 ---
-    nicknamePreview.textContent = nicknameInput.value || '你的昵称';
-    bioPreview.textContent = bioInput.value || '一句话介绍自己';
-    updateProfileHeaderAppearance();
-    updateBackgroundOverlay();
-    updateBackgroundStyle();
-    updateAllCardsAlignment(); // 新增：应用加载的对齐设置
-    updateAllCardsLineHeight(); // 新增：应用加载的行距设置
-    updateFontFamily(); // 新增：应用加载的字体设置
-    // 触发阴影更新
-    globalCardShadowToggle.dispatchEvent(new Event('change'));
+    try {
+        // 恢复个人信息 (文本和颜色)
+        nicknameInput.value = state.personalInfo.nickname;
+        bioInput.value = state.personalInfo.bio;
+        pageBgColorPicker.value = state.personalInfo.pageBgColor || '#ffffff';
+        previewArea.style.backgroundColor = state.personalInfo.pageBgColor;
 
-    console.log('状态已从 localStorage 加载。');
+        document.querySelector(`input[name="bg-option"][value="${state.personalInfo.backgroundOption}"]`).checked = true;
+        bgOverlayColorInput.value = state.personalInfo.overlayColor;
+        bgOverlayOpacityInput.value = state.personalInfo.overlayOpacity;
+        bgColorPicker.value = state.personalInfo.headerColor;
+        bgOpacitySlider.value = state.personalInfo.headerOpacity;
+        headerTextColorPicker.value = state.personalInfo.headerTextColor;
+        
+        // 恢复全局卡片样式
+        globalCardColorInput.value = state.globalCardStyles.color;
+        globalCardColor = state.globalCardStyles.color;
+        globalCardTextColorInput.value = state.globalCardStyles.textColor;
+        globalCardTextColor = state.globalCardStyles.textColor;
+        globalCardOpacityInput.value = state.globalCardStyles.opacity;
+        globalCardOpacity = state.globalCardStyles.opacity;
+        document.getElementById('global-card-shadow-toggle').checked = state.globalCardStyles.shadow;
+        const globalAlign = state.globalCardStyles.textAlign || 'left';
+        document.querySelector(`input[name="global-card-align"][value="${globalAlign}"]`).checked = true;
+        const globalLineHeight = state.globalCardStyles.lineHeight || '1.5';
+        document.querySelector(`input[name="global-line-height"][value="${globalLineHeight}"]`).checked = true;
+        const globalFontFamily = state.globalCardStyles.fontFamily || 'sans';
+        globalFontFamilySelect.value = globalFontFamily;
+
+
+        // 恢复卡片ID计数器
+        cardIdCounter = state.cardIdCounter || 0;
+
+        // 清空现有卡片
+        document.getElementById('single-card-controls-container').innerHTML = '';
+        document.getElementById('dual-card-controls-container').innerHTML = '';
+        singleColumnCardsContainer.innerHTML = '';
+        dualColumnCardsContainer.innerHTML = '';
+
+        // 重新创建卡片
+        if (state.cards && state.cards.length > 0) {
+            state.cards.forEach(cardData => {
+                addCard(cardData.type, cardData);
+            });
+        }
+
+        // --- 新增：强制更新预览区域，确保加载的数据能立即显示 ---
+        nicknamePreview.textContent = nicknameInput.value;
+        bioPreview.textContent = bioInput.value;
+        updateProfileHeaderAppearance();
+        updateBackgroundOverlay();
+        updateBackgroundStyle();
+        updateAllCardsAlignment(); // 新增：应用加载的对齐设置
+        updateAllCardsLineHeight(); // 新增：应用加载的行距设置
+        updateFontFamily(); // 新增：应用加载的字体设置
+        // 触发阴影更新
+        globalCardShadowToggle.dispatchEvent(new Event('change'));
+
+        // 最后重排一次布局
+        recalculateCardLayout();
+
+        console.log('状态已成功应用。');
+
+    } catch (error) {
+        console.error("应用状态失败:", error);
+        alert('导入配置失败，文件格式可能不正确。');
+    }
 }
 
 
@@ -157,6 +187,9 @@ const addDualCardBtn = document.getElementById('add-dual-card-btn');
 const singleCardControlsContainer = document.getElementById('single-card-controls-container');
 const dualCardControlsContainer = document.getElementById('dual-card-controls-container');
 const exportBtn = document.getElementById('export-btn');
+const importConfigBtn = document.getElementById('import-config-btn');
+const exportConfigBtn = document.getElementById('export-config-btn');
+const configFilePicker = document.getElementById('config-file-input');
 const globalCardColorInput = document.getElementById('global-card-color');
 const globalCardTextColorInput = document.getElementById('global-card-text-color'); // 新增
 const globalCardOpacityInput = document.getElementById('global-card-opacity');
@@ -1076,6 +1109,50 @@ exportBtn.addEventListener('click', async () => {
         exportBtn.disabled = false;
     }
 });
+
+// === 新增：导入/导出配置功能 ===
+exportConfigBtn.addEventListener('click', () => {
+    const state = getCurrentState();
+    const stateJson = JSON.stringify(state, null, 2); // 格式化JSON，方便阅读
+    const blob = new Blob([stateJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `self-intro-config_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url); // 释放内存
+});
+
+importConfigBtn.addEventListener('click', () => {
+    configFilePicker.click(); // 触发隐藏的文件输入框
+});
+
+configFilePicker.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) {
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const state = JSON.parse(e.target.result);
+            applyState(state);
+            alert('配置导入成功！');
+        } catch (error) {
+            console.error('读取配置文件失败:', error);
+            alert('导入失败，请确保文件是正确的配置文件。');
+        }
+    };
+    reader.readAsText(file);
+
+    // 清空input的值，确保下次选择同一文件也能触发change事件
+    event.target.value = '';
+});
+
 
 // 监听窗口大小变化，重新计算布局（使用debounce优化性能）
 let resizeTimer;

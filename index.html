@@ -129,7 +129,14 @@
                 </fieldset>
 
                 <!-- (进阶) 导出功能 -->
-                <button id="export-btn">导出为图片</button>
+                <div class="action-buttons-container">
+                    <div class="config-actions">
+                        <button id="import-config-btn">导入配置</button>
+                        <button id="export-config-btn">导出配置</button>
+                    </div>
+                    <button id="export-btn">导出为图片</button>
+                    <input type="file" id="config-file-input" accept=".json" style="display: none;">
+                </div>
             </div>
 
             <!-- ===== 预览区域 ===== -->

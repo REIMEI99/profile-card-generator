@@ -590,6 +590,54 @@ body {
     background: #0056CC;
 }
 
+/* 新增：为导入/导出按钮组添加样式 */
+.action-buttons-container {
+    display: flex;
+    flex-direction: column; /* 垂直排列 */
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.config-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.config-actions button {
+    flex: 1;
+    background-color: #8e8e93; /* 低调的灰色 */
+    color: white;
+    border: none;
+    padding: 8px 0; /* 较小的内边距 */
+    border-radius: 6px; /* 较小的圆角 */
+    cursor: pointer;
+    font-size: 13px; /* 较小的字号 */
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.config-actions button:hover {
+    background-color: #636366;
+}
+
+/* 保持主导出按钮的样式 */
+#export-btn {
+    width: 100%;
+    background: #007AFF;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+#export-btn:hover:not(:disabled) {
+    background-color: #0056CC;
+}
+
 #export-btn:disabled {
     background: #ccc;
     cursor: not-allowed;
@@ -637,7 +685,6 @@ body {
 
 /* 当处于导出模式时，移除所有不必要的阴影和边框，确保截图干净 */
 .export-mode {
-    box-shadow: none;
     border: none;
 }
 
