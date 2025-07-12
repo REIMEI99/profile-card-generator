@@ -10,19 +10,19 @@ body {
 /* 新增：应用标题栏样式 */
 .app-header {
     background: #ffffff;
-    padding: 0 25px;
-    height: 60px;
+    padding: 0 20px; /* 统一左右内边距 */
+    height: 50px; /* 在所有尺寸下都使用较小的高度 */
     display: flex;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    position: sticky; /* 在现代浏览器中表现良好 */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* 阴影更精细 */
+    position: sticky;
     top: 0;
-    z-index: 900; /* 确保在最上层，但低于裁剪模态框 */
+    z-index: 900;
 }
 
 .app-title {
-    font-family: 'Noto Sans SC', sans-serif; /* 明确使用思源黑体 */
-    font-size: 1.5rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 1.25rem; /* 在所有尺寸下都使用较小的字号 */
     font-weight: 700;
     color: #1c1c1e;
     margin: 0;
@@ -670,15 +670,6 @@ body {
         gap: 15px;
     }
     
-    .app-header {
-        padding: 0 15px;
-        height: 50px;
-    }
-
-    .app-title {
-        font-size: 1.3rem;
-    }
-
     .controls {
         padding: 15px;
     }
@@ -878,7 +869,7 @@ body {
         margin: 0; /* 覆盖移动端的 auto margin */
         position: sticky; /* 滚动时固定在页面上 */
         top: 25px; /* 与 app-container 的 padding 保持一致 */
-        max-height: calc(100vh - 50px - 60px); /* 减去顶栏高度和上下边距 */
+        max-height: calc(100vh - 50px - 50px); /* 减去新的顶栏高度和上下边距 */
         overflow-y: auto; /* 当内容超出时显示滚动条 */
     }
 
