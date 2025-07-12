@@ -424,10 +424,19 @@ exportBtn.addEventListener('click', async () => {
     // 显示加载状态
     exportBtn.textContent = '正在生成图片...';
     exportBtn.disabled = true;
+
+    // 保存预览区的原始样式，以便后续恢复
+    const originalWidth = previewArea.style.width;
+    const originalMaxWidth = previewArea.style.maxWidth;
     
     try {
         // 添加导出模式样式
         previewArea.classList.add('export-mode');
+
+        // --- 核心修改：为确保导出质量，临时强制设置宽度为600px ---
+        previewArea.style.width = '600px';
+        previewArea.style.maxWidth = '600px';
+        recalculateCardLayout(); // 根据新宽度重新计算瀑布流布局
         
         // 等待DOM更新
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -451,12 +460,20 @@ exportBtn.addEventListener('click', async () => {
         console.error('导出失败:', error);
         alert('导出失败，请重试');
     } finally {
+        // --- 恢复现场 ---
+        // 恢复预览区的原始样式
+        previewArea.style.width = originalWidth;
+        previewArea.style.maxWidth = originalMaxWidth;
+
+        // 移除导出模式样式
+        previewArea.classList.remove('export-mode');
+
+        // 再次重排布局以适应屏幕
+        recalculateCardLayout(); 
+
         // 恢复按钮状态
         exportBtn.textContent = '导出为图片';
         exportBtn.disabled = false;
-        
-        // 移除导出模式样式
-        previewArea.classList.remove('export-mode');
     }
 });
 

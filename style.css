@@ -395,3 +395,38 @@ body {
     background: #e0e0e0;
     color: #333;
 }
+
+/* === PC端双栏布局 (屏幕宽度 > 992px) === */
+@media (min-width: 992px) {
+    .app-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 25px;
+        gap: 25px;
+    }
+
+    .main-content {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 25px;
+        justify-content: center; /* 新增：让左右两栏在宽屏上居中显示 */
+    }
+
+    .controls {
+        flex: 0 0 420px; /* 控制面板固定宽度 */
+        width: 420px;
+        margin: 0; /* 覆盖移动端的 auto margin */
+        position: sticky; /* 滚动时固定在页面上 */
+        top: 25px; /* 与 app-container 的 padding 保持一致 */
+        max-height: calc(100vh - 50px); /* 设置最大高度，允许内部滚动 */
+        overflow-y: auto; /* 当内容超出时显示滚动条 */
+    }
+
+    .preview {
+        flex: 0 0 600px; /* 修改：固定宽度，不拉伸或压缩 */
+        width: 600px;      /* 修改：显式设置宽度 */
+        max-width: 600px;  /* 修改：覆盖移动端的 max-width */
+        margin: 0; /* 覆盖移动端的 auto margin */
+    }
+}
