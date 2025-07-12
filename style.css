@@ -262,6 +262,14 @@ body {
     box-sizing: border-box;
 }
 
+.card.align-center {
+    text-align: center;
+}
+
+.card.align-left {
+    text-align: left;
+}
+
 .card.card-has-bg {
     background-size: cover;
     background-position: center;
@@ -291,7 +299,7 @@ body {
 .card-content { 
     margin: 0; 
     white-space: pre-wrap;
-    line-height: 1.4;
+    line-height: 1.5; /* 默认行高，会被JS覆盖 */
     color: #555;
     overflow-wrap: break-word; /* 关键：强制长单词或URL换行 */
     transition: color 0.3s ease; /* Add transition for smooth color change */
@@ -378,6 +386,31 @@ body {
 
 .card-bg-control .clear-card-bg-btn:hover {
     background-color: #e5e6eb;
+}
+
+/* 新增: 卡片对齐控制器样式 */
+.card-alignment-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px; /* 与其他控件保持间距 */
+    font-size: 13px;
+}
+
+.card-alignment-control > label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: #555;
+}
+
+.card-alignment-control input[type="radio"] {
+    margin-left: 4px;
+}
+
+.card-alignment-control input[type="radio"] + label {
+    font-weight: normal;
+    cursor: pointer;
 }
 
 /* 新增：卡片背景图显示方式选项样式 */

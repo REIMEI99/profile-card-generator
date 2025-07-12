@@ -33,6 +33,7 @@ function saveState() {
             opacity: control.querySelector('.card-opacity-slider').value,
             backgroundImage: cardPreview.style.backgroundImage, // 新增：保存卡片背景图
             bgOption: control.querySelector(`input[name="card-bg-option-${cardId}"]:checked`)?.value || 'cover',
+            textAlign: control.querySelector(`input[name="card-align-option-${cardId}"]:checked`)?.value || 'default',
         });
     });
 
@@ -55,6 +56,8 @@ function saveState() {
             textColor: globalCardTextColorInput.value,
             opacity: globalCardOpacityInput.value,
             shadow: document.getElementById('global-card-shadow-toggle').checked,
+            textAlign: document.querySelector('input[name="global-card-align"]:checked')?.value || 'left',
+            lineHeight: document.querySelector('input[name="global-line-height"]:checked')?.value || '1.5',
         },
         cardIdCounter: cardIdCounter,
     };
@@ -96,6 +99,10 @@ function loadState() {
     globalCardOpacityInput.value = state.globalCardStyles.opacity;
     globalCardOpacity = state.globalCardStyles.opacity;
     document.getElementById('global-card-shadow-toggle').checked = state.globalCardStyles.shadow;
+    const globalAlign = state.globalCardStyles.textAlign || 'left';
+    document.querySelector(`input[name="global-card-align"][value="${globalAlign}"]`).checked = true;
+    const globalLineHeight = state.globalCardStyles.lineHeight || '1.5';
+    document.querySelector(`input[name="global-line-height"][value="${globalLineHeight}"]`).checked = true;
 
 
     // 恢复卡片ID计数器
@@ -120,6 +127,8 @@ function loadState() {
     updateProfileHeaderAppearance();
     updateBackgroundOverlay();
     updateBackgroundStyle();
+    updateAllCardsAlignment(); // 新增：应用加载的对齐设置
+    updateAllCardsLineHeight(); // 新增：应用加载的行距设置
     // 触发阴影更新
     globalCardShadowToggle.dispatchEvent(new Event('change'));
 
@@ -148,6 +157,8 @@ const globalCardColorInput = document.getElementById('global-card-color');
 const globalCardTextColorInput = document.getElementById('global-card-text-color'); // 新增
 const globalCardOpacityInput = document.getElementById('global-card-opacity');
 const globalCardShadowToggle = document.getElementById('global-card-shadow-toggle');
+const globalCardAlignRadios = document.querySelectorAll('input[name="global-card-align"]'); // 新增
+const globalCardLineHeightRadios = document.querySelectorAll('input[name="global-line-height"]'); // 新增
 
 // 预览区域元素
 const previewArea = document.getElementById('preview-area');
@@ -184,6 +195,55 @@ function hexToRgba(hex, alpha) {
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
+ * 新增：更新指定卡片的文字对齐方式
+ * @param {string} cardId - 卡片的ID
+ */
+function updateCardAlignment(cardId) {
+    const cardDiv = document.querySelector(`.card[data-card-id="${cardId}"]`);
+    const controlDiv = document.querySelector(`.card-control[data-card-id="${cardId}"]`);
+    if (!cardDiv || !controlDiv) return;
+
+    const globalAlign = document.querySelector('input[name="global-card-align"]:checked')?.value || 'left';
+    const cardAlign = controlDiv.querySelector(`input[name="card-align-option-${cardId}"]:checked`)?.value || 'default';
+
+    let finalAlign = cardAlign === 'default' ? globalAlign : cardAlign;
+
+    cardDiv.classList.remove('align-left', 'align-center');
+    if (finalAlign === 'left') {
+        cardDiv.classList.add('align-left');
+    } else if (finalAlign === 'center') {
+        cardDiv.classList.add('align-center');
+    }
+}
+
+/**
+ * 新增：更新所有卡片的行距
+ */
+function updateAllCardsLineHeight() {
+    const lineHeight = document.querySelector('input[name="global-line-height"]:checked')?.value || '1.5';
+    document.querySelectorAll('.card .card-content').forEach(content => {
+        content.style.lineHeight = lineHeight;
+    });
+    // 行距的改变可能影响文字换行，从而改变双列卡片的高度，需要重排
+    if (dualColumnCardsContainer.children.length > 0) {
+        recalculateCardLayout();
+    }
+}
+
+/**
+ * 新增：更新所有卡片的对齐方式（通常在全局设置改变时调用）
+ */
+function updateAllCardsAlignment() {
+    document.querySelectorAll('.card-control').forEach(control => {
+        updateCardAlignment(control.dataset.cardId);
+    });
+    // 对齐方式的改变可能影响文字换行，从而改变双列卡片的高度，需要重排
+    if (dualColumnCardsContainer.children.length > 0) {
+        recalculateCardLayout();
+    }
 }
 
 /**
@@ -442,6 +502,22 @@ globalCardShadowToggle.addEventListener('change', (e) => {
     debounceSaveState();
 });
 
+// 新增：全局卡片对齐控制器
+globalCardAlignRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+        updateAllCardsAlignment();
+        debounceSaveState();
+    });
+});
+
+// 新增：全局卡片行距控制器
+globalCardLineHeightRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+        updateAllCardsLineHeight();
+        debounceSaveState();
+    });
+});
+
 
 // === 4. Cropper.js 模态框事件监听 ===
 confirmCropBtn.addEventListener('click', () => {
@@ -497,6 +573,13 @@ function addCard(type, cardData = null) {
         <label>内容:</label>
         <textarea class="card-content-input" placeholder="卡片内容... (可输入空行调整带图卡片的高度)"></textarea>
         
+        <div class="card-alignment-control">
+            <label>对齐:</label>
+            <input type="radio" id="card-${cardId}-align-default" name="card-align-option-${cardId}" value="default" checked> <label for="card-${cardId}-align-default">默认</label>
+            <input type="radio" id="card-${cardId}-align-left" name="card-align-option-${cardId}" value="left"> <label for="card-${cardId}-align-left">居左</label>
+            <input type="radio" id="card-${cardId}-align-center" name="card-align-option-${cardId}" value="center"> <label for="card-${cardId}-align-center">居中</label>
+        </div>
+
         <label>卡片背景图 (可选):</label>
         <div class="card-bg-control">
             <input type="file" class="card-bg-upload" accept="image/*" title="选择背景图">
@@ -550,9 +633,14 @@ function addCard(type, cardData = null) {
     const cardBgUpload = controlDiv.querySelector('.card-bg-upload');
     const clearCardBgBtn = controlDiv.querySelector('.clear-card-bg-btn');
     const bgOptionRadios = controlDiv.querySelectorAll(`input[name="card-bg-option-${cardId}"]`);
+    const alignRadios = controlDiv.querySelectorAll(`input[name="card-align-option-${cardId}"]`);
     
     const previewTitle = cardDiv.querySelector('.card-title');
     const previewContent = cardDiv.querySelector('.card-content');
+
+    // 应用当前的全局行距
+    const globalLineHeight = document.querySelector('input[name="global-line-height"]:checked')?.value || '1.5';
+    previewContent.style.lineHeight = globalLineHeight;
 
     // 填充来自localStorage的数据（如果存在）
     if (!isNewCard) {
@@ -565,6 +653,10 @@ function addCard(type, cardData = null) {
         }
         if (cardData.bgOption) {
             const radioToSelect = controlDiv.querySelector(`input[value="${cardData.bgOption}"]`);
+            if (radioToSelect) radioToSelect.checked = true;
+        }
+        if (cardData.textAlign) {
+            const radioToSelect = controlDiv.querySelector(`input[name="card-align-option-${cardId}"][value="${cardData.textAlign}"]`);
             if (radioToSelect) radioToSelect.checked = true;
         }
     }
@@ -694,12 +786,25 @@ function addCard(type, cardData = null) {
         });
     });
 
+    // 新增：为对齐方式单选按钮绑定事件
+    alignRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateCardAlignment(cardId);
+            // 对齐方式改变可能影响文字换行，从而影响双列卡片高度
+            if (type === 'dual') {
+                recalculateCardLayout();
+            }
+            debounceSaveState();
+        });
+    });
+
     if (type === 'dual') {
         recalculateCardLayout();
     }
     updateContainerMargins();
     updateCardAppearance(); // 初始化卡片外观
     updateCardBackgroundStyle(); // 初始化背景图样式
+    updateCardAlignment(cardId); // 新增：初始化对齐方式
     // 应用全局阴影设置
     document.querySelector(`.card[data-card-id="${cardId}"]`).classList.toggle('no-shadow', !globalCardShadowToggle.checked);
 
