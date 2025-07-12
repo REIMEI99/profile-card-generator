@@ -149,6 +149,7 @@ body {
     width: 100%;
     transition: height 0.3s ease; /* Animate height changes */
     margin-top: 0; /* Default margin */
+    box-sizing: border-box; /* 新增：确保padding被包含在宽度内，防止溢出 */
     /* Padding is on the .preview parent */
     z-index: 2; /* 确保在蒙版之上 */
 }
@@ -296,7 +297,7 @@ body {
     }
     
     .cards-container {
-        gap: 8px;
+        /* gap: 8px; */ /* 移除，避免与JS中的10px冲突 */
         padding: 12px;
     }
     
