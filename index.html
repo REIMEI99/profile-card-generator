@@ -6,10 +6,7 @@
     <meta name="format-detection" content="telephone=no">
     <title>Tintro-瀑布流自介/推图生成器</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.proxy.ustclug.org">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.proxy.ustclug.org/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet">
-    <link href="https://fonts.proxy.ustclug.org/css2?family=Noto+Serif+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
     <!-- 引入Cropper.js的CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
 </head>
@@ -172,6 +169,17 @@
                 <button id="cancel-crop-btn" class="cancel-btn">取消</button>
                 <button id="confirm-crop-btn">确认裁剪</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== 新增：下载模态框 ===== -->
+    <div class="download-modal-overlay" id="download-modal">
+        <div class="download-modal-container">
+            <h3 id="download-modal-title">下载已准备好</h3>
+            <div id="download-modal-content">
+                <!-- JS 会在这里插入下载链接 -->
+            </div>
+            <button id="download-modal-close-btn">关闭</button>
         </div>
     </div>
 

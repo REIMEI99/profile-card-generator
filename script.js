@@ -218,8 +218,63 @@ let globalCardColor = '#ffffff'; // 全局卡片颜色
 let globalCardTextColor = '#000000'; // 新增：全局卡片文字颜色
 let globalCardOpacity = 0.9; // 全局卡片不透明度
 
+// 新增：下载模态框相关的DOM元素
+const downloadModal = document.getElementById('download-modal');
+const downloadModalTitle = document.getElementById('download-modal-title');
+const downloadModalContent = document.getElementById('download-modal-content');
+const downloadModalCloseBtn = document.getElementById('download-modal-close-btn');
+let currentObjectUrl = null; // 用于跟踪需要释放的URL对象
+
 
 // === 2. 核心功能函数 ===
+
+/**
+ * 新增：显示下载模态框
+ * @param {string} url - 下载链接 (可以是data URL或blob URL)
+ * @param {string} filename - 默认文件名
+ * @param {string} title - 模态框标题
+ */
+function showDownloadModal(url, filename, title) {
+    // 释放上一个URL，防止内存泄漏
+    if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+    }
+    // 只保存blob URL用于后续释放
+    currentObjectUrl = url.startsWith('blob:') ? url : null;
+
+    downloadModalTitle.textContent = title;
+    downloadModalContent.innerHTML = ''; // 清空旧链接
+
+    const downloadLink = document.createElement('a');
+    downloadLink.href = url;
+    downloadLink.download = filename;
+    downloadLink.textContent = `点击下载: ${filename}`;
+    
+    // 如果是图片，额外提供一个预览
+    if (url.startsWith('data:image')) {
+        const imgPreview = document.createElement('img');
+        imgPreview.src = url;
+        imgPreview.style.maxWidth = '100%';
+        imgPreview.style.maxHeight = '50vh'; // 新增：限制图片预览的最大高度
+        imgPreview.style.marginBottom = '15px';
+        imgPreview.style.borderRadius = '8px';
+        downloadModalContent.appendChild(imgPreview);
+    }
+
+    downloadModalContent.appendChild(downloadLink);
+    downloadModal.classList.add('visible');
+}
+
+/**
+ * 新增：隐藏下载模态框并清理资源
+ */
+function hideDownloadModal() {
+    downloadModal.classList.remove('visible');
+    if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+    }
+}
 
 /**
  * 将十六进制颜色和alpha值转换为rgba字符串
@@ -1084,10 +1139,9 @@ exportBtn.addEventListener('click', async () => {
         });
         
         // 创建高质量图片
-        const link = document.createElement('a');
-        link.download = `自我介绍_${new Date().toISOString().slice(0, 10)}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0); // 最高质量
-        link.click();
+        const imageUrl = canvas.toDataURL('image/png', 1.0);
+        const filename = `Tintro_${new Date().toISOString().slice(0, 10)}.png`;
+        showDownloadModal(imageUrl, filename, '图片已生成');
         
     } catch (error) {
         console.error('导出失败:', error);
@@ -1116,14 +1170,9 @@ exportConfigBtn.addEventListener('click', () => {
     const stateJson = JSON.stringify(state, null, 2); // 格式化JSON，方便阅读
     const blob = new Blob([stateJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    const filename = `tintro-config_${new Date().toISOString().slice(0, 10)}.json`;
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `self-intro-config_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url); // 释放内存
+    showDownloadModal(url, filename, '配置文件已生成');
 });
 
 importConfigBtn.addEventListener('click', () => {
@@ -1152,6 +1201,9 @@ configFilePicker.addEventListener('change', (event) => {
     // 清空input的值，确保下次选择同一文件也能触发change事件
     event.target.value = '';
 });
+
+// 新增：为下载模态框的关闭按钮绑定事件
+downloadModalCloseBtn.addEventListener('click', hideDownloadModal);
 
 
 // 监听窗口大小变化，重新计算布局（使用debounce优化性能）
