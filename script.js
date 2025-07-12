@@ -52,6 +52,7 @@ function saveState() {
             color: globalCardColorInput.value,
             textColor: globalCardTextColorInput.value,
             opacity: globalCardOpacityInput.value,
+            shadow: document.getElementById('global-card-shadow-toggle').checked,
         },
         cardIdCounter: cardIdCounter,
     };
@@ -92,12 +93,15 @@ function loadState() {
     globalCardTextColor = state.globalCardStyles.textColor;
     globalCardOpacityInput.value = state.globalCardStyles.opacity;
     globalCardOpacity = state.globalCardStyles.opacity;
+    document.getElementById('global-card-shadow-toggle').checked = state.globalCardStyles.shadow;
+
 
     // 恢复卡片ID计数器
     cardIdCounter = state.cardIdCounter || 0;
 
     // 清空现有卡片
-    cardControlsContainer.innerHTML = '';
+    document.getElementById('single-card-controls-container').innerHTML = '';
+    document.getElementById('dual-card-controls-container').innerHTML = '';
     singleColumnCardsContainer.innerHTML = '';
     dualColumnCardsContainer.innerHTML = '';
 
@@ -107,6 +111,15 @@ function loadState() {
             addCard(cardData.type, cardData);
         });
     }
+
+    // --- 新增：强制更新预览区域，确保加载的数据能立即显示 ---
+    nicknamePreview.textContent = nicknameInput.value || '你的昵称';
+    bioPreview.textContent = bioInput.value || '一句话介绍自己';
+    updateProfileHeaderAppearance();
+    updateBackgroundOverlay();
+    updateBackgroundStyle();
+    // 触发阴影更新
+    globalCardShadowToggle.dispatchEvent(new Event('change'));
 
     console.log('状态已从 localStorage 加载。');
 }
@@ -126,11 +139,13 @@ const headerTextColorPicker = document.getElementById('header-text-color-picker'
 const pageBgColorPicker = document.getElementById('page-bg-color-picker');
 const addSingleCardBtn = document.getElementById('add-single-card-btn');
 const addDualCardBtn = document.getElementById('add-dual-card-btn');
-const cardControlsContainer = document.getElementById('card-controls-container');
+const singleCardControlsContainer = document.getElementById('single-card-controls-container');
+const dualCardControlsContainer = document.getElementById('dual-card-controls-container');
 const exportBtn = document.getElementById('export-btn');
 const globalCardColorInput = document.getElementById('global-card-color');
 const globalCardTextColorInput = document.getElementById('global-card-text-color'); // 新增
 const globalCardOpacityInput = document.getElementById('global-card-opacity');
+const globalCardShadowToggle = document.getElementById('global-card-shadow-toggle');
 
 // 预览区域元素
 const previewArea = document.getElementById('preview-area');
@@ -174,7 +189,7 @@ function hexToRgba(hex, alpha) {
  */
 function recalculateCardLayout() {
     if (!dualColumnCardsContainer) return;
-    const gap = 10;
+    const gap = 15; // 修改：将间距从10px统一为15px
     const containerWidth = dualColumnCardsContainer.clientWidth;
     if (containerWidth === 0) return; // 如果容器不可见或没有宽度，则不计算
     const cardWidth = (containerWidth - gap) / 2;
@@ -416,6 +431,15 @@ globalCardOpacityInput.addEventListener('input', (e) => {
     debounceSaveState();
 });
 
+// 新增：全局卡片阴影开关
+globalCardShadowToggle.addEventListener('change', (e) => {
+    const showShadow = e.target.checked;
+    document.querySelectorAll('.card').forEach(card => {
+        card.classList.toggle('no-shadow', !showShadow);
+    });
+    debounceSaveState();
+});
+
 
 // === 4. Cropper.js 模态框事件监听 ===
 confirmCropBtn.addEventListener('click', () => {
@@ -461,21 +485,32 @@ function addCard(type, cardData = null) {
     const controlDiv = document.createElement('div');
     controlDiv.className = 'card-control';
     controlDiv.dataset.cardId = cardId;
+    // controlDiv.draggable = true; // 移除：不再让整个控制器都可拖拽
     controlDiv.innerHTML = `
+        <span class="drag-handle" title="拖动排序" draggable="true">⠿</span> <!-- 新增：仅手柄可拖拽 -->
         <button class="delete-card-btn" title="删除此卡片">❌</button>
         <h4>${type === 'single' ? '单列' : '双列'}卡片 #${cardId}</h4>
         <label>标题:</label>
         <input type="text" class="card-title-input" placeholder="卡片标题">
         <label>内容:</label>
         <textarea class="card-content-input" placeholder="卡片内容..."></textarea>
-        <label>背景色:</label>
-        <input type="color" class="card-color-picker" value="${isNewCard ? globalCardColor : cardData.color}">
-        <label>文字颜色:</label>
-        <input type="color" class="card-text-color-picker" value="${isNewCard ? globalCardTextColor : cardData.textColor}">
+        <div class="color-controls-row">
+            <div class="color-control-group">
+                <label>背景色:</label>
+                <input type="color" class="card-color-picker" value="${isNewCard ? globalCardColor : cardData.color}">
+            </div>
+            <div class="color-control-group">
+                <label>文字颜色:</label>
+                <input type="color" class="card-text-color-picker" value="${isNewCard ? globalCardTextColor : cardData.textColor}">
+            </div>
+        </div>
         <label>不透明度:</label>
         <input type="range" class="card-opacity-slider" min="0.1" max="1" step="0.05" value="${isNewCard ? globalCardOpacity : cardData.opacity}">
     `;
-    cardControlsContainer.appendChild(controlDiv);
+    
+    // 根据类型将控制器添加到对应的容器
+    const targetControlContainer = type === 'single' ? singleCardControlsContainer : dualCardControlsContainer;
+    targetControlContainer.appendChild(controlDiv);
 
     // --- B. 在预览区创建新的卡片 ---
     const cardDiv = document.createElement('div');
@@ -572,6 +607,9 @@ function addCard(type, cardData = null) {
     }
     updateContainerMargins();
     updateCardAppearance(); // 初始化卡片外观
+    // 应用全局阴影设置
+    document.querySelector(`.card[data-card-id="${cardId}"]`).classList.toggle('no-shadow', !globalCardShadowToggle.checked);
+
 
     if (isNewCard) {
         saveState(); // 添加新卡片后立即保存
@@ -580,6 +618,112 @@ function addCard(type, cardData = null) {
 
 addSingleCardBtn.addEventListener('click', () => addCard('single'));
 addDualCardBtn.addEventListener('click', () => addCard('dual'));
+
+
+// === 新增：拖拽排序功能 ===
+function makeSortable(controlContainer, previewContainer, cardType) {
+    let draggedItem = null;
+
+    // 监听容器内的拖拽开始事件
+    controlContainer.addEventListener('dragstart', e => {
+        // 确保拖拽的是拖拽手柄
+        if (e.target.classList.contains('drag-handle')) {
+            draggedItem = e.target.closest('.card-control');
+            // 使用一个短暂的延迟来确保拖拽的视觉效果（如透明度）能够应用
+            setTimeout(() => {
+                if (draggedItem) {
+                    draggedItem.classList.add('dragging');
+                }
+            }, 0);
+        }
+    });
+
+    // 拖拽结束时（无论成功与否），移除样式
+    controlContainer.addEventListener('dragend', () => {
+        if (draggedItem) {
+            draggedItem.classList.remove('dragging');
+            draggedItem = null;
+        }
+    });
+
+    // 当拖拽物进入容器范围时
+    controlContainer.addEventListener('dragover', e => {
+        e.preventDefault(); // 这是允许放置（drop）的必要步骤
+        const afterElement = getDragAfterElement(controlContainer, e.clientY);
+        const dragging = controlContainer.querySelector('.dragging');
+        if (dragging) {
+            if (afterElement == null) {
+                controlContainer.appendChild(dragging);
+            } else {
+                controlContainer.insertBefore(dragging, afterElement);
+            }
+        }
+        
+        // --- 新增：边缘自动滚动逻辑 ---
+        const scrollableParent = (window.innerWidth < 992) ? window : controlContainer.closest('.controls');
+        if (!scrollableParent) return;
+
+        const parentRect = (scrollableParent === window)
+            ? { top: 0, bottom: window.innerHeight, height: window.innerHeight }
+            : scrollableParent.getBoundingClientRect();
+
+        const threshold = parentRect.height * 0.20; // 使用20%的容器高度作为触发区域
+        const scrollSpeed = 10; // 每次事件触发时的滚动像素
+        const clientY = e.clientY;
+
+        // 如果拖拽到顶部20%的区域，向上滚动
+        if (clientY < parentRect.top + threshold) {
+            scrollableParent.scrollBy(0, -scrollSpeed);
+        } 
+        // 如果拖拽到底部20%的区域，向下滚动
+        else if (clientY > parentRect.bottom - threshold) {
+            scrollableParent.scrollBy(0, scrollSpeed);
+        }
+    });
+
+    // 当在容器内放置时
+    controlContainer.addEventListener('drop', e => {
+        e.preventDefault();
+        
+        // --- 核心逻辑：重新排序预览区的卡片 ---
+        const newOrderIds = Array.from(controlContainer.children).map(child => child.dataset.cardId);
+
+        newOrderIds.forEach(id => {
+            const cardToMove = previewContainer.querySelector(`.card[data-card-id="${id}"]`);
+            if(cardToMove) {
+                previewContainer.appendChild(cardToMove);
+            }
+        });
+        
+        // 如果是双列布局，需要重新计算瀑布流
+        if (cardType === 'dual') {
+            recalculateCardLayout();
+        }
+
+        // 保存新的顺序
+        saveState();
+    });
+
+    /**
+     * 计算当前鼠标位置下，被拖拽的元素应该插入到哪个元素的前面
+     * @param {HTMLElement} container - 容器元素
+     * @param {number} y - 鼠标的垂直坐标
+     * @returns {HTMLElement|null} - 目标元素或null（表示应插入到末尾）
+     */
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.card-control:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+}
 
 
 // === 6. 优化的导出功能 ===
@@ -661,4 +805,8 @@ window.addEventListener('load', () => {
     updateBackgroundOverlay();
     // 应用加载的背景显示样式
     updateBackgroundStyle();
+    
+    // 初始化拖拽功能
+    makeSortable(singleCardControlsContainer, singleColumnCardsContainer, 'single');
+    makeSortable(dualCardControlsContainer, dualColumnCardsContainer, 'dual');
 });
