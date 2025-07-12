@@ -262,6 +262,12 @@ body {
     box-sizing: border-box;
 }
 
+.card.card-has-bg {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 .card.no-shadow {
     box-shadow: none;
 }
@@ -345,6 +351,61 @@ body {
     border-radius: 6px;
     padding: 8px;
     font-size: 14px;
+}
+
+/* 新增：卡片背景图控制器样式 */
+.card-bg-control {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.card-bg-control input[type="file"] {
+    flex-grow: 1;
+    width: 100%; /* 确保在 flex 容器中正确填充 */
+}
+
+.card-bg-control .clear-card-bg-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background-color: #f1f2f6;
+    cursor: pointer;
+    font-size: 12px;
+    flex-shrink: 0; /* 防止按钮被压缩 */
+}
+
+.card-bg-control .clear-card-bg-btn:hover {
+    background-color: #e5e6eb;
+}
+
+/* 新增：卡片背景图显示方式选项样式 */
+.card-bg-options {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 13px;
+}
+
+.card-bg-options label {
+    margin: 0;
+    cursor: pointer;
+}
+
+.card-bg-options label.group-label {
+    font-weight: 600;
+    color: #555;
+    margin: 0;
+}
+
+.card-bg-options input[type="radio"] {
+    margin-right: 2px;
 }
 
 /* 新增：用于将颜色选择器并排显示的样式 */
@@ -578,8 +639,8 @@ body {
     }
 
     .controls {
-        flex: 0 0 420px; /* 控制面板固定宽度 */
-        width: 420px;
+        flex: 1 0 420px; /* 允许面板增长，基础宽度420px，防止收缩 */
+        max-width: 600px; /* 设置一个最大宽度，避免在超宽屏上过分拉伸 */
         margin: 0; /* 覆盖移动端的 auto margin */
         position: sticky; /* 滚动时固定在页面上 */
         top: 25px; /* 与 app-container 的 padding 保持一致 */

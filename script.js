@@ -31,6 +31,8 @@ function saveState() {
             color: control.querySelector('.card-color-picker').value,
             textColor: control.querySelector('.card-text-color-picker').value,
             opacity: control.querySelector('.card-opacity-slider').value,
+            backgroundImage: cardPreview.style.backgroundImage, // 新增：保存卡片背景图
+            bgOption: control.querySelector(`input[name="card-bg-option-${cardId}"]:checked`)?.value || 'cover',
         });
     });
 
@@ -493,7 +495,20 @@ function addCard(type, cardData = null) {
         <label>标题:</label>
         <input type="text" class="card-title-input" placeholder="卡片标题">
         <label>内容:</label>
-        <textarea class="card-content-input" placeholder="卡片内容..."></textarea>
+        <textarea class="card-content-input" placeholder="卡片内容... (可输入空行调整带图卡片的高度)"></textarea>
+        
+        <label>卡片背景图 (可选):</label>
+        <div class="card-bg-control">
+            <input type="file" class="card-bg-upload" accept="image/*" title="选择背景图">
+            <button type="button" class="clear-card-bg-btn" title="清除背景图">清除</button>
+        </div>
+        <div class="card-bg-options">
+            <label>显示方式:</label>
+            <input type="radio" id="card-${cardId}-bg-cover" name="card-bg-option-${cardId}" value="cover" checked> <label for="card-${cardId}-bg-cover">缩放</label>
+            <input type="radio" id="card-${cardId}-bg-stretch" name="card-bg-option-${cardId}" value="stretch"> <label for="card-${cardId}-bg-stretch">拉伸</label>
+            <input type="radio" id="card-${cardId}-bg-tile" name="card-bg-option-${cardId}" value="tile"> <label for="card-${cardId}-bg-tile">平铺</label>
+        </div>
+
         <div class="color-controls-row">
             <div class="color-control-group">
                 <label>背景色:</label>
@@ -532,6 +547,9 @@ function addCard(type, cardData = null) {
     const textColorPicker = controlDiv.querySelector('.card-text-color-picker'); // 新增
     const opacitySlider = controlDiv.querySelector('.card-opacity-slider');
     const deleteBtn = controlDiv.querySelector('.delete-card-btn');
+    const cardBgUpload = controlDiv.querySelector('.card-bg-upload');
+    const clearCardBgBtn = controlDiv.querySelector('.clear-card-bg-btn');
+    const bgOptionRadios = controlDiv.querySelectorAll(`input[name="card-bg-option-${cardId}"]`);
     
     const previewTitle = cardDiv.querySelector('.card-title');
     const previewContent = cardDiv.querySelector('.card-content');
@@ -540,6 +558,15 @@ function addCard(type, cardData = null) {
     if (!isNewCard) {
         titleInput.value = cardData.title;
         contentInput.value = cardData.content;
+        // 新增：恢复卡片背景
+        if (cardData.backgroundImage && cardData.backgroundImage !== 'none' && cardData.backgroundImage !== '') {
+            cardDiv.style.backgroundImage = cardData.backgroundImage;
+            cardDiv.classList.add('card-has-bg');
+        }
+        if (cardData.bgOption) {
+            const radioToSelect = controlDiv.querySelector(`input[value="${cardData.bgOption}"]`);
+            if (radioToSelect) radioToSelect.checked = true;
+        }
     }
 
     // 统一更新卡片背景和文字颜色的函数
@@ -554,7 +581,37 @@ function addCard(type, cardData = null) {
         previewTitle.style.color = textColor;
         previewContent.style.color = textColor;
 
-        // 移除所有关于边框的判断和修改
+        // 如果有背景图，为文字添加阴影以保证可读性
+        if (cardDiv.classList.contains('card-has-bg')) {
+            previewTitle.style.textShadow = 'none';
+            previewContent.style.textShadow = 'none';
+        } else {
+            previewTitle.style.textShadow = 'none';
+            previewContent.style.textShadow = 'none';
+        }
+    }
+
+    // 新增：根据选项更新卡片背景图样式
+    function updateCardBackgroundStyle() {
+        const selectedOption = controlDiv.querySelector(`input[name="card-bg-option-${cardId}"]:checked`)?.value || 'cover';
+        switch (selectedOption) {
+            case 'stretch':
+                cardDiv.style.backgroundSize = '100% 100%';
+                cardDiv.style.backgroundRepeat = 'no-repeat';
+                cardDiv.style.backgroundPosition = 'center';
+                break;
+            case 'tile':
+                cardDiv.style.backgroundSize = 'auto';
+                cardDiv.style.backgroundRepeat = 'repeat';
+                cardDiv.style.backgroundPosition = 'top left';
+                break;
+            case 'cover':
+            default:
+                cardDiv.style.backgroundSize = 'cover';
+                cardDiv.style.backgroundRepeat = 'no-repeat';
+                cardDiv.style.backgroundPosition = 'center';
+                break;
+        }
     }
 
     // 绑定事件
@@ -602,11 +659,47 @@ function addCard(type, cardData = null) {
         }, 300);
     });
 
+    // 新增：处理卡片背景图上传
+    cardBgUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            cardDiv.style.backgroundImage = `url(${event.target.result})`;
+            cardDiv.classList.add('card-has-bg');
+            updateCardAppearance(); // 更新文字阴影等
+            updateCardBackgroundStyle(); // 应用当前的显示方式
+            if (type === 'dual') recalculateCardLayout();
+            debounceSaveState();
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; // 允许重新上传相同文件
+    });
+
+    // 新增：清除卡片背景图
+    clearCardBgBtn.addEventListener('click', () => {
+        cardDiv.style.backgroundImage = 'none';
+        cardDiv.classList.remove('card-has-bg');
+        updateCardAppearance(); // 移除文字阴影
+        if (type === 'dual') recalculateCardLayout();
+        debounceSaveState();
+    });
+
+    // 新增：为背景显示方式单选按钮绑定事件
+    bgOptionRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateCardBackgroundStyle();
+            debounceSaveState();
+        });
+    });
+
     if (type === 'dual') {
         recalculateCardLayout();
     }
     updateContainerMargins();
     updateCardAppearance(); // 初始化卡片外观
+    updateCardBackgroundStyle(); // 初始化背景图样式
     // 应用全局阴影设置
     document.querySelector(`.card[data-card-id="${cardId}"]`).classList.toggle('no-shadow', !globalCardShadowToggle.checked);
 
