@@ -662,6 +662,26 @@ function addCard(type, cardData = null) {
     const previewTitle = cardDiv.querySelector('.card-title');
     const previewContent = cardDiv.querySelector('.card-content');
 
+    // --- 新增：卡片点击跳转功能 ---
+    cardDiv.addEventListener('click', (e) => {
+        // 如果点击的是可编辑的文字区域，则不触发跳转，以方便用户开始编辑
+        if (e.target.isContentEditable) {
+            return;
+        }
+
+        const controlToScroll = document.querySelector(`.card-control[data-card-id="${cardId}"]`);
+        if (controlToScroll) {
+            // 平滑滚动到视图中央
+            controlToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 添加高亮效果，并在动画结束后移除
+            controlToScroll.classList.add('highlight-scroll');
+            setTimeout(() => {
+                controlToScroll.classList.remove('highlight-scroll');
+            }, 1500); // 持续时间与CSS动画相同
+        }
+    });
+
     // 应用当前的全局行距
     const globalLineHeight = document.querySelector('input[name="global-line-height"]:checked')?.value || '1.5';
     previewContent.style.lineHeight = globalLineHeight;

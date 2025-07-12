@@ -330,6 +330,23 @@ body {
     padding-left: 40px; /* 为拖拽手柄留出空间 */
 }
 
+/* 新增：滚动到编辑卡片时的临时高亮效果 */
+@keyframes highlight-fade {
+    from {
+        background-color: rgba(0, 122, 255, 0.15);
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+    }
+    to {
+        background-color: initial;
+        box-shadow: initial;
+    }
+}
+
+.card-control.highlight-scroll {
+    animation: highlight-fade 1.5s ease-out;
+}
+
+
 /* 新增：拖拽手柄样式 */
 .drag-handle {
     position: absolute;
