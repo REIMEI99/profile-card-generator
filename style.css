@@ -1,11 +1,31 @@
 /* style.css */
 body {
-    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #eef1f5;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* 新增：应用标题栏样式 */
+.app-header {
+    background: #ffffff;
+    padding: 0 25px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    position: sticky; /* 在现代浏览器中表现良好 */
+    top: 0;
+    z-index: 900; /* 确保在最上层，但低于裁剪模态框 */
+}
+
+.app-title {
+    font-family: 'Noto Sans SC', sans-serif; /* 明确使用思源黑体 */
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1c1c1e;
+    margin: 0;
 }
 
 .app-container {
@@ -650,6 +670,15 @@ body {
         gap: 15px;
     }
     
+    .app-header {
+        padding: 0 15px;
+        height: 50px;
+    }
+
+    .app-title {
+        font-size: 1.3rem;
+    }
+
     .controls {
         padding: 15px;
     }
@@ -781,7 +810,7 @@ body {
         margin: 0; /* 覆盖移动端的 auto margin */
         position: sticky; /* 滚动时固定在页面上 */
         top: 25px; /* 与 app-container 的 padding 保持一致 */
-        max-height: calc(100vh - 50px); /* 设置最大高度，允许内部滚动 */
+        max-height: calc(100vh - 50px - 60px); /* 减去顶栏高度和上下边距 */
         overflow-y: auto; /* 当内容超出时显示滚动条 */
     }
 

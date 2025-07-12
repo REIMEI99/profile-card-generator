@@ -1175,6 +1175,10 @@ window.addEventListener('load', () => {
     updateBackgroundOverlay();
     // 应用加载的背景显示样式
     updateBackgroundStyle();
+    // 新增：确保即使没有缓存，全局样式的默认值也能在首次加载时正确应用
+    updateAllCardsAlignment();
+    updateAllCardsLineHeight();
+    updateFontFamily();
     
     // 初始化拖拽功能
     makeSortable(singleCardControlsContainer, singleColumnCardsContainer, 'single');
