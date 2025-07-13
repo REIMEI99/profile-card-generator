@@ -1127,7 +1127,7 @@ exportBtn.addEventListener('click', async () => {
         await document.fonts.ready;
         
         // 等待DOM更新
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // 使用优化的html2canvas配置
         const canvas = await html2canvas(previewArea, {
