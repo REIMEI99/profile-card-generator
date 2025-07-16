@@ -704,13 +704,7 @@ body {
 }
 
 /* 当处于导出模式时，移除所有不必要的阴影和边框，确保截图干净 */
-.export-mode {
-    border: none;
-}
-
-.export-mode .delete-card-btn {
-    display: none; /* 导出时隐藏删除按钮 */
-}
+/* .export-mode 已被JS离屏渲染取代，不再需要 */
 
 /* === 新增：图片裁剪模态框样式 === */
 .cropper-modal-overlay {

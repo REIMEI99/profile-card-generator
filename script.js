@@ -360,15 +360,15 @@ function updateAllCardsAlignment() {
 /**
  * JS实现的瀑布流布局函数
  */
-function recalculateCardLayout() {
-    if (!dualColumnCardsContainer) return;
+function recalculateCardLayout(container = dualColumnCardsContainer) {
+    if (!container) return;
     const gap = 15; // 修改：将间距从10px统一为15px
-    const containerWidth = dualColumnCardsContainer.clientWidth;
+    const containerWidth = container.clientWidth;
     if (containerWidth === 0) return; // 如果容器不可见或没有宽度，则不计算
     const cardWidth = (containerWidth - gap) / 2;
     
     let columnHeights = [0, 0];
-    const cards = dualColumnCardsContainer.querySelectorAll('.card');
+    const cards = container.querySelectorAll('.card');
 
     cards.forEach(card => {
         card.style.width = `${cardWidth}px`;
@@ -381,7 +381,7 @@ function recalculateCardLayout() {
         columnHeights[minHeightColumn] += cardHeight + gap;
     });
 
-    dualColumnCardsContainer.style.height = `${Math.max(...columnHeights)}px`;
+    container.style.height = `${Math.max(...columnHeights)}px`;
 }
 
 /**
@@ -1110,31 +1110,40 @@ exportBtn.addEventListener('click', async () => {
     exportBtn.textContent = '正在生成图片...';
     exportBtn.disabled = true;
 
-    // 保存预览区的原始样式，以便后续恢复
-    const originalWidth = previewArea.style.width;
-    const originalMaxWidth = previewArea.style.maxWidth;
+    // 创建一个用于离屏渲染的克隆体
+    const clone = previewArea.cloneNode(true);
+    clone.id = 'preview-clone-for-render'; // 赋予新ID以避免冲突
+    
+    // --- 核心修改：将克隆体放置在屏幕外并强制设置其样式 ---
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '0px';
+    clone.style.width = '600px';
+    clone.style.maxWidth = '600px';
+    clone.style.boxShadow = 'none'; // 去除阴影以获得干净截图
+    document.body.appendChild(clone);
     
     try {
-        // 添加导出模式样式
-        previewArea.classList.add('export-mode');
+        // --- 在克隆体上执行所有布局计算和渲染准备 ---
 
-        // --- 核心修改：为确保导出质量，临时强制设置宽度为600px ---
-        previewArea.style.width = '600px';
-        previewArea.style.maxWidth = '600px';
-        recalculateCardLayout(); // 根据新宽度重新计算瀑布流布局
+        // 1. 获取克隆体内的双列容器
+        const dualColumnClone = clone.querySelector('#dual-column-cards-container');
         
-        // --- 核心修复：等待所有字体加载完成后再截图 ---
+        // 2. 根据新宽度重新计算克隆体内的瀑布流布局
+        recalculateCardLayout(dualColumnClone);
+        
+        // 3. 确保所有字体都已加载完成
         await document.fonts.ready;
+
+        // 4. 等待片刻，以确保图片和CSS背景完全渲染
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // 等待DOM更新
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // 使用优化的html2canvas配置
-        const canvas = await html2canvas(previewArea, {
+        // 5. 使用优化的html2canvas配置在克隆体上截图
+        const canvas = await html2canvas(clone, {
             scale: 2, // 调整导出分辨率为2倍
             useCORS: true,
-            allowTaint: true,
-            backgroundColor: null, // 设置背景为透明以防止白边
+            allowTaint: false, // 设为false以配合useCORS
+            backgroundColor: null, // 设置背景为透明
             logging: false,
         });
         
@@ -1145,18 +1154,12 @@ exportBtn.addEventListener('click', async () => {
         
     } catch (error) {
         console.error('导出失败:', error);
-        alert('导出失败，请重试');
+        alert('导出失败，可能是网络问题或图片跨域限制导致，请检查控制台信息或稍后重试。');
     } finally {
         // --- 恢复现场 ---
-        // 恢复预览区的原始样式
-        previewArea.style.width = originalWidth;
-        previewArea.style.maxWidth = originalMaxWidth;
-
-        // 移除导出模式样式
-        previewArea.classList.remove('export-mode');
-
-        // 再次重排布局以适应屏幕
-        recalculateCardLayout(); 
+        
+        // 从DOM中移除克隆体
+        document.body.removeChild(clone);
 
         // 恢复按钮状态
         exportBtn.textContent = '导出为图片';
