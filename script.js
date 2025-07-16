@@ -35,6 +35,8 @@ function getCurrentState() {
             // backgroundImage: cardPreview.style.backgroundImage, // 移除：不再导出卡片背景图信息
             bgOption: control.querySelector(`input[name="card-bg-option-${cardId}"]:checked`)?.value || 'cover',
             textAlign: control.querySelector(`input[name="card-align-option-${cardId}"]:checked`)?.value || 'default',
+            overlayColor: control.querySelector('.card-overlay-color-picker').value,
+            overlayOpacity: control.querySelector('.card-overlay-opacity-slider').value,
         });
     });
 
@@ -733,6 +735,21 @@ function addCard(type, cardData = null) {
             <input type="radio" id="card-${cardId}-bg-tile" name="card-bg-option-${cardId}" value="tile"> <label for="card-${cardId}-bg-tile">平铺</label>
         </div>
 
+        <!-- 新增: 卡片蒙版控制器 -->
+        <div class="card-overlay-controls" style="display: none;">
+            <label>图片颜色蒙版:</label>
+            <div class="color-controls-row">
+                <div class="color-control-group">
+                    <label>蒙版颜色:</label>
+                    <input type="color" class="card-overlay-color-picker" value="#ffffff">
+                </div>
+                <div class="color-control-group">
+                    <label>不透明度:</label>
+                    <input type="range" class="card-overlay-opacity-slider" min="0" max="1" step="0.05" value="0.5">
+                </div>
+            </div>
+        </div>
+
         <div class="color-controls-row">
             <div class="color-control-group">
                 <label>背景色:</label>
@@ -775,6 +792,9 @@ function addCard(type, cardData = null) {
     const clearCardBgBtn = controlDiv.querySelector('.clear-card-bg-btn');
     const bgOptionRadios = controlDiv.querySelectorAll(`input[name="card-bg-option-${cardId}"]`);
     const alignRadios = controlDiv.querySelectorAll(`input[name="card-align-option-${cardId}"]`);
+    const overlayControls = controlDiv.querySelector('.card-overlay-controls');
+    const overlayColorPicker = controlDiv.querySelector('.card-overlay-color-picker');
+    const overlayOpacitySlider = controlDiv.querySelector('.card-overlay-opacity-slider');
     
     const previewTitle = cardDiv.querySelector('.card-title');
     const previewContent = cardDiv.querySelector('.card-content');
@@ -813,6 +833,7 @@ function addCard(type, cardData = null) {
         if (cardData.backgroundImage && cardData.backgroundImage !== 'none' && cardData.backgroundImage !== '') {
             cardDiv.style.backgroundImage = cardData.backgroundImage;
             cardDiv.classList.add('card-has-bg');
+            overlayControls.style.display = 'block'; // 恢复时显示蒙版控件
         }
         if (cardData.bgOption) {
             const radioToSelect = controlDiv.querySelector(`input[value="${cardData.bgOption}"]`);
@@ -821,6 +842,12 @@ function addCard(type, cardData = null) {
         if (cardData.textAlign) {
             const radioToSelect = controlDiv.querySelector(`input[name="card-align-option-${cardId}"][value="${cardData.textAlign}"]`);
             if (radioToSelect) radioToSelect.checked = true;
+        }
+        if (cardData.overlayColor) {
+            overlayColorPicker.value = cardData.overlayColor;
+        }
+        if (cardData.overlayOpacity) {
+            overlayOpacitySlider.value = cardData.overlayOpacity;
         }
     }
 
@@ -844,6 +871,14 @@ function addCard(type, cardData = null) {
             previewTitle.style.textShadow = 'none';
             previewContent.style.textShadow = 'none';
         }
+    }
+
+    // 新增：更新卡片背景图的颜色蒙版
+    function updateCardOverlay() {
+        const color = overlayColorPicker.value;
+        const opacity = overlayOpacitySlider.value;
+        const rgbaColor = hexToRgba(color, opacity);
+        cardDiv.style.setProperty('--card-overlay-color', rgbaColor);
     }
 
     // 新增：根据选项更新卡片背景图样式
@@ -940,6 +975,8 @@ function addCard(type, cardData = null) {
         reader.onload = (event) => {
             cardDiv.style.backgroundImage = `url(${event.target.result})`;
             cardDiv.classList.add('card-has-bg');
+            overlayControls.style.display = 'block';
+            updateCardOverlay(); // 应用默认或已有的蒙版
             updateCardAppearance(); // 更新文字阴影等
             updateCardBackgroundStyle(); // 应用当前的显示方式
             if (type === 'dual') recalculateCardLayout();
@@ -953,6 +990,7 @@ function addCard(type, cardData = null) {
     clearCardBgBtn.addEventListener('click', () => {
         cardDiv.style.backgroundImage = 'none';
         cardDiv.classList.remove('card-has-bg');
+        overlayControls.style.display = 'none';
         updateCardAppearance(); // 移除文字阴影
         if (type === 'dual') recalculateCardLayout();
         debounceSaveState();
@@ -978,6 +1016,15 @@ function addCard(type, cardData = null) {
         });
     });
 
+    overlayColorPicker.addEventListener('input', () => {
+        updateCardOverlay();
+        debounceSaveState();
+    });
+    overlayOpacitySlider.addEventListener('input', () => {
+        updateCardOverlay();
+        debounceSaveState();
+    });
+
     if (type === 'dual') {
         recalculateCardLayout();
     }
@@ -985,6 +1032,7 @@ function addCard(type, cardData = null) {
     updateCardAppearance(); // 初始化卡片外观
     updateCardBackgroundStyle(); // 初始化背景图样式
     updateCardAlignment(cardId); // 新增：初始化对齐方式
+    updateCardOverlay(); // 新增：初始化蒙版
     // 应用全局阴影设置
     document.querySelector(`.card[data-card-id="${cardId}"]`).classList.toggle('no-shadow', !globalCardShadowToggle.checked);
 

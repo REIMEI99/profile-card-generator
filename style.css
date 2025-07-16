@@ -289,6 +289,7 @@ body {
     transition: all 0.3s ease;
     /* position and width are now context-dependent */
     box-sizing: border-box;
+    position: relative; /* 新增：为蒙版伪元素定位 */
 }
 
 /* 新增：为可编辑元素提供视觉反馈和占位符样式 */
@@ -319,6 +320,22 @@ body {
     background-repeat: no-repeat;
 }
 
+/* 新增：卡片背景图蒙版样式 */
+.card.card-has-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--card-overlay-color, rgba(255, 255, 255, 0.5));
+    border-radius: 10px; /* 匹配卡片的圆角 */
+    z-index: 1;
+    pointer-events: none;
+    transition: background-color 0.3s ease;
+}
+
+
 .card.no-shadow {
     box-shadow: none;
 }
@@ -338,6 +355,8 @@ body {
     font-weight: 600;
     color: #333;
     transition: color 0.3s ease; /* Add transition for smooth color change */
+    position: relative; /* 新增：确保在蒙版之上 */
+    z-index: 2; /* 新增：确保在蒙版之上 */
 }
 .card-content { 
     margin: 0; 
@@ -346,6 +365,8 @@ body {
     color: #555;
     overflow-wrap: break-word; /* 关键：强制长单词或URL换行 */
     transition: color 0.3s ease; /* Add transition for smooth color change */
+    position: relative; /* 新增：确保在蒙版之上 */
+    z-index: 2; /* 新增：确保在蒙版之上 */
 }
 
 /* 卡片控制器样式 */
@@ -873,4 +894,29 @@ body {
         max-width: 600px;  /* 修改：覆盖移动端的 max-width */
         margin: 0; /* 覆盖移动端的 auto margin */
     }
+}
+
+/* 新增：卡片蒙版控制器样式 */
+.card-overlay-controls {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    background-color: #fff;
+}
+
+.card-overlay-controls > label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.card-overlay-controls .color-controls-row {
+    margin-top: 0;
+}
+
+.card-overlay-controls .color-control-group label {
+    font-size: 13px;
+    font-weight: normal;
 }
