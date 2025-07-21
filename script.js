@@ -1153,6 +1153,53 @@ function makeSortable(controlContainer, previewContainer, cardType) {
 
 
 // === 6. 优化的导出功能 ===
+
+// 新增：等待所有图片加载的辅助函数
+function waitForAllImagesLoaded(clone, timeout = 5000) {
+    const images = [];
+    // 1. 卡片背景图（通过style.backgroundImage设置）
+    clone.querySelectorAll('.card.card-has-bg').forEach(card => {
+        const bg = card.style.backgroundImage;
+        if (bg && bg.startsWith('url(')) {
+            // 兼容单双引号
+            let url = bg.slice(4, -1).replace(/^["']|["']$/g, '');
+            if (url) {
+                images.push(url);
+            }
+        }
+    });
+    // 2. 全局背景图（previewArea）
+    const previewBg = clone.style.backgroundImage;
+    if (previewBg && previewBg.startsWith('url(')) {
+        let url = previewBg.slice(4, -1).replace(/^["']|["']$/g, '');
+        if (url) {
+            images.push(url);
+        }
+    }
+    // 3. 头像
+    const avatar = clone.querySelector('#avatar-preview');
+    if (avatar && avatar.src && avatar.src.startsWith('data:image')) {
+        images.push(avatar.src);
+    }
+    // 4. 预览区内所有img标签（如有）
+    clone.querySelectorAll('img').forEach(img => {
+        if (img.src && img.src.startsWith('data:image')) {
+            images.push(img.src);
+        }
+    });
+    // 等待所有图片加载，或超时
+    const loadPromises = images.map(url => new Promise(resolve => {
+        const img = new window.Image();
+        img.onload = resolve;
+        img.onerror = resolve;
+        img.src = url;
+    }));
+    return Promise.race([
+        Promise.all(loadPromises),
+        new Promise(resolve => setTimeout(resolve, timeout))
+    ]);
+}
+
 exportBtn.addEventListener('click', async () => {
     // 显示加载状态
     exportBtn.textContent = '正在生成图片...';
@@ -1183,10 +1230,13 @@ exportBtn.addEventListener('click', async () => {
         // 3. 确保所有字体都已加载完成
         await document.fonts.ready;
 
-        // 4. 等待片刻，以确保图片和CSS背景完全渲染
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // 4. 等待所有背景图和头像加载完成，最长5秒
+        await waitForAllImagesLoaded(clone, 5000);
+
+        // 5. 等待片刻，以确保图片和CSS背景完全渲染
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // 5. 使用优化的html2canvas配置在克隆体上截图
+        // 6. 使用优化的html2canvas配置在克隆体上截图
         const canvas = await html2canvas(clone, {
             scale: 2, // 调整导出分辨率为2倍
             useCORS: true,
@@ -1256,6 +1306,22 @@ configFilePicker.addEventListener('change', (event) => {
 // 新增：为下载模态框的关闭按钮绑定事件
 downloadModalCloseBtn.addEventListener('click', hideDownloadModal);
 
+
+// 新增：导出帮助提示
+const exportHelpLink = document.getElementById('export-help-link');
+if (exportHelpLink) {
+    exportHelpLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert(
+            '如果是格式问题：\n' +
+            '1. 检查所用的设备屏幕大小。如果屏幕宽度过小（比如手机），建议先横屏，然后点击各个卡片或适当输入/删除回车直到所有卡片显示正常，再点击导出。\n' +
+            '2. 尝试更换网络，例如用移动数据访问。\n' +
+            '3. 尝试更换浏览器（可以先导出配置，在新的浏览器中导入），强烈不推荐使用夸克浏览器或手机端无法横屏的浏览器。\n' +
+            '\n如果是图片保存失败或没有反应的问题：\n' +
+            '一般是由于设备/浏览器的安全设置，建议尝试长按/右键导出的图片预览来保存，如依旧不行，尝试更换浏览器/设备。'
+        );
+    });
+}
 
 // 监听窗口大小变化，重新计算布局（使用debounce优化性能）
 let resizeTimer;
