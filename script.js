@@ -157,6 +157,7 @@ function applyState(state) {
         updateAllCardsAlignment(); // 新增：应用加载的对齐设置
         updateAllCardsLineHeight(); // 新增：应用加载的行距设置
         updateFontFamily(); // 新增：应用加载的字体设置
+        updateFontSize(); // 新增：应用加载的字体大小
         // 触发阴影更新
         globalCardShadowToggle.dispatchEvent(new Event('change'));
 
@@ -199,6 +200,7 @@ const globalCardShadowToggle = document.getElementById('global-card-shadow-toggl
 const globalCardAlignRadios = document.querySelectorAll('input[name="global-card-align"]'); // 新增
 const globalCardLineHeightRadios = document.querySelectorAll('input[name="global-line-height"]'); // 新增
 const globalFontFamilySelect = document.getElementById('global-font-family-select'); // 修改：从单选改为下拉框
+const globalFontSizeSelect = document.getElementById('global-font-size-select');
 
 // 预览区域元素
 const previewArea = document.getElementById('preview-area');
@@ -226,6 +228,27 @@ const downloadModalTitle = document.getElementById('download-modal-title');
 const downloadModalContent = document.getElementById('download-modal-content');
 const downloadModalCloseBtn = document.getElementById('download-modal-close-btn');
 let currentObjectUrl = null; // 用于跟踪需要释放的URL对象
+
+// 新增：实验性手机模式开关
+const mobileModeToggle = document.getElementById('mobile-mode-toggle');
+
+// 新增：实验性高清导出模式开关
+const hdExportToggle = document.getElementById('hd-export-toggle');
+
+// 手机模式切换逻辑
+if (mobileModeToggle) {
+    mobileModeToggle.addEventListener('change', () => {
+        if (mobileModeToggle.checked) {
+            previewArea.classList.add('mobile-mode');
+        } else {
+            previewArea.classList.remove('mobile-mode');
+        }
+        // 手机模式切换后需要重排卡片布局
+        if (dualColumnCardsContainer.children.length > 0) {
+            recalculateCardLayout();
+        }
+    });
+}
 
 
 // === 2. 核心功能函数 ===
@@ -327,6 +350,19 @@ function updateFontFamily() {
         previewArea.classList.add('font-sans');
     }
     // 字体改变会严重影响布局，必须重算
+    if (dualColumnCardsContainer.children.length > 0) {
+        recalculateCardLayout();
+    }
+}
+
+/**
+ * 新增：更新预览区域的字体大小
+ */
+function updateFontSize() {
+    const size = globalFontSizeSelect.value || 'small';
+    previewArea.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+    previewArea.classList.add('font-size-' + size);
+    // 字号改变可能影响布局
     if (dualColumnCardsContainer.children.length > 0) {
         recalculateCardLayout();
     }
@@ -660,6 +696,14 @@ globalFontFamilySelect.addEventListener('change', () => {
     updateFontFamily();
     debounceSaveState();
 });
+
+// 监听字体大小切换
+if (globalFontSizeSelect) {
+    globalFontSizeSelect.addEventListener('change', () => {
+        updateFontSize();
+        debounceSaveState && debounceSaveState();
+    });
+}
 
 
 // === 4. Cropper.js 模态框事件监听 ===
@@ -1213,8 +1257,14 @@ exportBtn.addEventListener('click', async () => {
     clone.style.position = 'absolute';
     clone.style.top = '-9999px';
     clone.style.left = '0px';
-    clone.style.width = '600px';
-    clone.style.maxWidth = '600px';
+    // 判断是否为手机模式
+    if (mobileModeToggle && mobileModeToggle.checked) {
+        clone.style.width = '375px';
+        clone.style.maxWidth = '375px';
+    } else {
+        clone.style.width = '600px';
+        clone.style.maxWidth = '600px';
+    }
     clone.style.boxShadow = 'none'; // 去除阴影以获得干净截图
     document.body.appendChild(clone);
     
@@ -1237,8 +1287,9 @@ exportBtn.addEventListener('click', async () => {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // 6. 使用优化的html2canvas配置在克隆体上截图
+        const exportScale = (hdExportToggle && hdExportToggle.checked) ? 4 : 2;
         const canvas = await html2canvas(clone, {
-            scale: 2, // 调整导出分辨率为2倍
+            scale: exportScale, // 调整导出分辨率
             useCORS: true,
             allowTaint: false, // 设为false以配合useCORS
             backgroundColor: null, // 设置背景为透明
@@ -1348,6 +1399,7 @@ window.addEventListener('load', () => {
     updateAllCardsAlignment();
     updateAllCardsLineHeight();
     updateFontFamily();
+    updateFontSize(); // 新增：首次加载时也应用字体大小
     
     // 初始化拖拽功能
     makeSortable(singleCardControlsContainer, singleColumnCardsContainer, 'single');

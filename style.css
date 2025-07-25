@@ -281,15 +281,13 @@ body {
 /* 单个卡片样式 */
 .card {
     background: #f8f9fa;
-    padding: 15px; /* 修改：将内边距从12px统一为15px */
+    padding: 15px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    font-size: 0.85rem;
     border: none;
     transition: all 0.3s ease;
-    /* position and width are now context-dependent */
     box-sizing: border-box;
-    position: relative; /* 新增：为蒙版伪元素定位 */
+    position: relative;
 }
 
 /* 新增：为可编辑元素提供视觉反馈和占位符样式 */
@@ -351,22 +349,21 @@ body {
 
 .card-title { 
     margin: 0 0 8px; 
-    font-size: 1rem;
     font-weight: 600;
     color: #333;
-    transition: color 0.3s ease; /* Add transition for smooth color change */
-    position: relative; /* 新增：确保在蒙版之上 */
-    z-index: 2; /* 新增：确保在蒙版之上 */
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 2;
 }
 .card-content { 
     margin: 0; 
     white-space: pre-wrap;
-    line-height: 1.5; /* 默认行高，会被JS覆盖 */
+    line-height: 1.5;
     color: #555;
-    overflow-wrap: break-word; /* 关键：强制长单词或URL换行 */
-    transition: color 0.3s ease; /* Add transition for smooth color change */
-    position: relative; /* 新增：确保在蒙版之上 */
-    z-index: 2; /* 新增：确保在蒙版之上 */
+    overflow-wrap: break-word;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 2;
 }
 
 /* 卡片控制器样式 */
@@ -919,4 +916,22 @@ body {
 .card-overlay-controls .color-control-group label {
     font-size: 13px;
     font-weight: normal;
+}
+
+.preview.font-size-small {
+    font-size: 15px;
+}
+.preview.font-size-medium {
+    font-size: 17px;
+}
+.preview.font-size-large {
+    font-size: 19px;
+}
+
+.preview.mobile-mode {
+    width: 375px !important;
+    max-width: 375px !important;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    padding: 10px;
 }
